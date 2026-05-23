@@ -1,0 +1,54 @@
+{
+  "name": "闲妙 - 二手闲置交易平台",
+  "short_name": "闲妙",
+  "description": "AI驱动的同城二手闲置交易平台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "发布商品",
+      "short_name": "发布",
+      "url": "/product/publish",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "我的消息",
+      "short_name": "消息",
+      "url": "/chat",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "我的订单",
+      "short_name": "订单",
+      "url": "/order",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/product/publish",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [{ "name": "images", "accept": ["image/*"] }]
+    }
+  },
+  "categories": ["shopping", "lifestyle"],
+  "lang": "zh-CN"
+}
