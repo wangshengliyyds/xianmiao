@@ -1,0 +1,29 @@
+appId: com.xianmiao.app
+productName: 闲妙
+directories:
+  output: dist-electron
+  buildResources: electron/assets
+
+files:
+  - electron/**/*
+
+win:
+  target:
+    - nsis
+  icon: electron/assets/icon.png
+
+mac:
+  target:
+    - dmg
+  icon: electron/assets/icon.png
+
+linux:
+  target:
+    - AppImage
+  icon: electron/assets/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: 闲妙
