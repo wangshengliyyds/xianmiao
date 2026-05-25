@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Phone, Lock, User, Loader2, ArrowRight } from 'lucide-react'
+import { Phone, Lock, User, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
@@ -19,14 +19,17 @@ export default function LoginPage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const supabase = createClient()
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [loginMethod, setLoginMethod] = useState<'code' | 'password'>('code')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [nickname, setNickname] = useState('')
   const [countdown, setCountdown] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [codeSent, setCodeSent] = useState(false)
-  const [devCode, setDevCode] = useState('') // 开发模式显示验证码
+  const [devCode, setDevCode] = useState('')
 
   // 手机号格式化
   const formatPhone = (value: string) => {
@@ -69,7 +72,6 @@ export default function LoginPage() {
       setCodeSent(true)
       setCountdown(60)
 
-      // 显示验证码（短信服务不可用时自动显示）
       if (data.dev_code) {
         setDevCode(data.dev_code)
       }
@@ -97,34 +99,42 @@ export default function LoginPage() {
     }
   }, [])
 
-  // 提交表单
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-
-    if (!phone) {
-      setError('请输入手机号')
-      return
-    }
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
-      setError('请输入正确的11位手机号')
-      return
-    }
-    if (!code) {
-      setError('请输入验证码')
-      return
-    }
-    if (code.length !== 6) {
-      setError('验证码为6位数字')
-      return
-    }
-    if (mode === 'register' && !nickname.trim()) {
-      setError('请输入昵称')
-      return
-    }
+  // 密码登录
+  const handlePasswordLogin = async () => {
+    if (!phone) { setError('请输入手机号'); return }
+    if (!/^1[3-9]\d{9}$/.test(phone)) { setError('请输入正确的11位手机号'); return }
+    if (!password) { setError('请输入密码'); return }
 
     setLoading(true)
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: `${phone}@xianmiao.phone`,
+        password,
+      })
+      if (signInError) {
+        setError(signInError.message.includes('Invalid login credentials')
+          ? '手机号或密码错误'
+          : '登录失败: ' + signInError.message)
+        setLoading(false)
+        return
+      }
+      router.push(redirectTo)
+      router.refresh()
+    } catch {
+      setError('登录失败，请重试')
+      setLoading(false)
+    }
+  }
 
+  // 验证码登录/注册
+  const handleCodeLogin = async () => {
+    if (!phone) { setError('请输入手机号'); return }
+    if (!/^1[3-9]\d{9}$/.test(phone)) { setError('请输入正确的11位手机号'); return }
+    if (!code) { setError('请输入验证码'); return }
+    if (code.length !== 6) { setError('验证码为6位数字'); return }
+    if (mode === 'register' && !nickname.trim()) { setError('请输入昵称'); return }
+
+    setLoading(true)
     try {
       const response = await fetch('/api/auth/verify-code', {
         method: 'POST',
@@ -140,7 +150,6 @@ export default function LoginPage() {
         return
       }
 
-      // 如果需要注册
       if (data.need_register) {
         if (mode !== 'register') {
           setError('该手机号未注册，请切换到注册页面')
@@ -148,11 +157,10 @@ export default function LoginPage() {
           return
         }
 
-        // 创建新用户（使用确定性密码，确保后续可登录）
-        const tempPassword = `${phone}${Math.random().toString(36).slice(-8)}`
+        const regPassword = password || `${phone}${Math.random().toString(36).slice(-8)}`
         const { data: signUpData, error: createError } = await supabase.auth.signUp({
           email: `${phone}@xianmiao.phone`,
-          password: tempPassword,
+          password: regPassword,
           options: {
             data: {
               phone,
@@ -167,16 +175,11 @@ export default function LoginPage() {
           return
         }
 
-        // 如果 signUp 没有自动建立 session，用密码登录
         if (!signUpData.session) {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
+          await supabase.auth.signInWithPassword({
             email: `${phone}@xianmiao.phone`,
-            password: tempPassword,
-          })
-          if (signInError) {
-            // 如果密码登录也失败，尝试等待 session
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-          }
+            password: regPassword,
+          }).catch(() => {})
         }
 
         router.push(redirectTo)
@@ -184,12 +187,23 @@ export default function LoginPage() {
         return
       }
 
-      // 已有用户登录，session 已由服务端设置，直接跳转
       router.push(redirectTo)
       router.refresh()
-    } catch (err) {
+    } catch {
       setError('验证失败，请重试')
       setLoading(false)
+    }
+  }
+
+  // 提交表单
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (mode === 'login' && loginMethod === 'password') {
+      await handlePasswordLogin()
+    } else {
+      await handleCodeLogin()
     }
   }
 
@@ -235,6 +249,34 @@ export default function LoginPage() {
           注册
         </button>
       </div>
+
+      {/* 登录方式切换（仅登录模式） */}
+      {mode === 'login' && (
+        <div className="mb-4 flex rounded-lg bg-muted/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => { setLoginMethod('code'); setError('') }}
+            className={`flex-1 rounded-md py-2 text-xs font-medium transition-all ${
+              loginMethod === 'code'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            验证码登录
+          </button>
+          <button
+            type="button"
+            onClick={() => { setLoginMethod('password'); setError('') }}
+            className={`flex-1 rounded-md py-2 text-xs font-medium transition-all ${
+              loginMethod === 'password'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            密码登录
+          </button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 错误提示 */}
@@ -289,42 +331,71 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* 验证码 */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            验证码
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+        {/* 验证码模式 */}
+        {(mode === 'register' || loginMethod === 'code') && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              验证码
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="请输入6位验证码"
+                  value={code}
+                  onChange={(e) => setCode(formatCode(e.target.value))}
+                  maxLength={6}
+                  className="w-full rounded-lg border bg-background py-3 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={sendCode}
+                disabled={countdown > 0}
+                className={`shrink-0 rounded-lg px-4 py-3 text-sm font-medium transition-all ${
+                  countdown > 0
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-primary/10 text-primary hover:bg-primary/20'
+                }`}
+              >
+                {countdown > 0 ? `${countdown}s` : '获取验证码'}
+              </button>
+            </div>
+            {codeSent && countdown > 0 && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                验证码已发送至 +86 {phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1 $2 $3')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* 密码 */}
+        {(mode === 'register' || loginMethod === 'password') && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              密码
+            </label>
+            <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
-                type="text"
-                placeholder="请输入6位验证码"
-                value={code}
-                onChange={(e) => setCode(formatCode(e.target.value))}
-                maxLength={6}
-                className="w-full rounded-lg border bg-background py-3 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                type={showPassword ? 'text' : 'password'}
+                placeholder={mode === 'register' ? '请设置密码（至少6位）' : '请输入密码'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                className="w-full rounded-lg border bg-background py-3 pl-10 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={sendCode}
-              disabled={countdown > 0}
-              className={`shrink-0 rounded-lg px-4 py-3 text-sm font-medium transition-all ${
-                countdown > 0
-                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : 'bg-primary/10 text-primary hover:bg-primary/20'
-              }`}
-            >
-              {countdown > 0 ? `${countdown}s` : '获取验证码'}
-            </button>
           </div>
-          {codeSent && countdown > 0 && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              验证码已发送至 +86 {phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1 $2 $3')}
-            </p>
-          )}
-        </div>
+        )}
 
         {/* 提交按钮 */}
         <button
