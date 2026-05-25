@@ -62,16 +62,44 @@ export default function ChatDetailPage() {
   }, [data?.data])
 
   const handleSend = async () => {
-    if (!messageText.trim()) return
+    if (!messageText.trim() || !user) return
+    const text = messageText.trim()
+    setMessageText('')
+
+    // 乐观更新：立即显示消息
+    const tempId = `temp-${Date.now()}`
+    const optimisticMessage: MessageWithSender = {
+      id: tempId,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      type: 'text',
+      content: text,
+      created_at: new Date().toISOString(),
+      is_withdrawn: false,
+      sender: {
+        id: user.id,
+        nickname: user.nickname || '我',
+        avatar_url: user.avatar_url || null,
+      },
+    } as MessageWithSender
+
+    queryClient.setQueryData(
+      ['messages', conversationId],
+      (old: { data: MessageWithSender[]; has_more: boolean } | undefined) => {
+        if (!old) return old
+        return { ...old, data: [...old.data, optimisticMessage] }
+      }
+    )
 
     try {
       await sendMessage.mutateAsync({
         conversationId,
         type: 'text',
-        content: messageText.trim(),
+        content: text,
       })
-      setMessageText('')
     } catch (err: unknown) {
+      // 发送失败，回滚乐观更新
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
       toast.error(err instanceof Error ? err.message : '发送失败')
     }
   }

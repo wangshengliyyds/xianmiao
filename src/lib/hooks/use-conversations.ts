@@ -1,10 +1,15 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { createClient } from '@/lib/supabase/client'
 import type { ConversationWithDetails, MessageWithSender } from '@/types'
 
 export function useConversations() {
-  return useQuery({
+  const queryClient = useQueryClient()
+  const supabaseRef = useRef(createClient())
+
+  const query = useQuery({
     queryKey: ['conversations'],
     queryFn: async (): Promise<ConversationWithDetails[]> => {
       const res = await fetch('/api/conversations')
@@ -12,13 +17,43 @@ export function useConversations() {
       const { data } = await res.json()
       return data
     },
-    staleTime: 30 * 1000,
-    refetchInterval: 30000, // 每30秒刷新一次
+    staleTime: 60 * 1000,
   })
+
+  // Realtime 订阅：对话列表变化时刷新
+  useEffect(() => {
+    const supabase = supabaseRef.current
+    const channel = supabase
+      .channel('conversations-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversations' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'conversation_members' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [queryClient])
+
+  return query
 }
 
 export function useMessages(conversationId: string, before?: string) {
-  return useQuery({
+  const queryClient = useQueryClient()
+  const supabaseRef = useRef(createClient())
+
+  const query = useQuery({
     queryKey: ['messages', conversationId, before],
     queryFn: async (): Promise<{ data: MessageWithSender[]; has_more: boolean }> => {
       const params = new URLSearchParams()
@@ -29,10 +64,42 @@ export function useMessages(conversationId: string, before?: string) {
       if (!res.ok) throw new Error('获取消息失败')
       return res.json()
     },
-    enabled: !!conversationId,
-    staleTime: 10 * 1000,
-    refetchInterval: 10000, // 每10秒刷新一次
+    enabled: !!conversationId && !before,
+    staleTime: 60 * 1000,
   })
+
+  // Realtime 订阅：收到新消息时实时更新
+  useEffect(() => {
+    if (!conversationId || before) return
+
+    const supabase = supabaseRef.current
+    const channel = supabase
+      .channel(`messages-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          // 收到新消息，刷新消息列表
+          queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
+          // 同时刷新对话列表（更新最后一条消息）
+          queryClient.invalidateQueries({ queryKey: ['conversations'] })
+          // 刷新未读计数
+          queryClient.invalidateQueries({ queryKey: ['unread-summary'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [conversationId, before, queryClient])
+
+  return query
 }
 
 export function useCreateConversation() {
@@ -84,7 +151,7 @@ export function useSendMessage() {
       return res.json()
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.conversationId] })
+      // Realtime 会自动处理更新，这里只刷新对话列表
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })
