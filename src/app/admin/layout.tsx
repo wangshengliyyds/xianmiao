@@ -64,8 +64,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-56 border-r bg-muted/30 p-4 transition-transform md:relative md:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 w-56 bg-muted/30 p-4 transition-transform md:relative md:translate-x-0 md:border-r ${
+          sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'
         }`}
       >
         <Link href="/admin" className="mb-6 block">

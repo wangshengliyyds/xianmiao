@@ -66,35 +66,35 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">数据看板</h1>
+      <h1 className="mb-4 text-xl font-bold md:mb-6 md:text-2xl">数据看板</h1>
 
-      {/* 统计卡片 */}
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+      {/* 统计卡片：两栏三行 */}
+      <div className="mb-6 grid grid-cols-2 gap-3 md:mb-8 md:gap-4">
         {statCards.map((card) => {
           const Icon = card.icon
           return (
             <Link
               key={card.label}
               href={card.href}
-              className="rounded-2xl border bg-card p-5 transition-shadow hover:shadow-md"
+              className="rounded-2xl border bg-card p-3.5 transition-shadow hover:shadow-md md:p-5"
             >
-              <div className="mb-3 flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.color}`}>
-                  <Icon className="h-5 w-5 stroke-[1.8]" />
+              <div className="mb-2 flex items-center gap-2.5 md:mb-3 md:gap-3">
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl md:h-10 md:w-10 ${card.color}`}>
+                  <Icon className="h-4.5 w-4.5 stroke-[1.8] md:h-5 md:w-5" />
                 </div>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-xl font-bold md:text-2xl">
                 {loading ? '—' : card.value.toLocaleString()}
               </p>
-              <p className="mt-0.5 text-sm text-muted-foreground">{card.label}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{card.label}</p>
             </Link>
           )
         })}
       </div>
 
       {/* 快捷操作 */}
-      <h2 className="mb-4 text-lg font-semibold">快捷操作</h2>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <h2 className="mb-3 text-base font-semibold md:mb-4 md:text-lg">快捷操作</h2>
+      <div className="grid grid-cols-2 gap-2.5 md:gap-3">
         {[
           { label: '用户管理', desc: '查看和管理用户', href: '/admin/users' },
           { label: '商品审核', desc: '审核新发布商品', href: '/admin/products' },
@@ -104,9 +104,9 @@ export default function AdminDashboard() {
           <Link
             key={item.label}
             href={item.href}
-            className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50"
+            className="rounded-xl border bg-card p-3 transition-colors hover:bg-muted/50 md:p-4"
           >
-            <p className="font-medium">{item.label}</p>
+            <p className="text-sm font-medium md:text-base">{item.label}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{item.desc}</p>
           </Link>
         ))}
