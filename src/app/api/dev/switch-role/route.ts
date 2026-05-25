@@ -51,6 +51,9 @@ function makeAvatarSvg(initial: string, color: string): string {
 }
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   const { role } = await request.json()
   const account = TEST_ACCOUNTS[role]
   if (!account) {
