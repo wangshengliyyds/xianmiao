@@ -57,14 +57,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen">
-      {/* 移动端菜单按钮 */}
+      {/* 移动端遮罩 */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-56 bg-muted/30 p-4 transition-transform md:relative md:translate-x-0 md:border-r ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-background p-4 transition-transform md:relative md:w-56 md:translate-x-0 md:border-r md:bg-muted/30 ${
           sidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'
         }`}
       >
@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <p className="text-xs text-muted-foreground">Admin Dashboard</p>
         </Link>
 
-        <nav className="space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto py-2">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
