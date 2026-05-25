@@ -1,5 +1,6 @@
 const { app, BrowserWindow, shell } = require('electron')
 const path = require('path')
+const { autoUpdater } = require('electron-updater')
 
 const APP_URL = process.env.ELECTRON_APP_URL || 'http://123.56.126.50:3001'
 
@@ -36,7 +37,10 @@ function createWindow() {
   })
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow()
+  autoUpdater.checkForUpdatesAndNotify()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
