@@ -27,23 +27,27 @@ export function triggerDevTools() {
   }
 }
 
+// 供外部直接激活（如 Profile 页面按钮）
+export function activateDevTools() {
+  listeners.forEach(fn => fn(true))
+  toast.success('开发者模式已激活')
+}
+
 export function DevTools() {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [switching, setSwitching] = useState(false)
-  const [visible, setVisible] = useState(process.env.NODE_ENV === 'development')
+  const [activated, setActivated] = useState(process.env.NODE_ENV === 'development')
 
   // 注册激活监听器
-  const onActivate = useCallback((v: boolean) => setVisible(true), [])
+  const onActivate = useCallback(() => setActivated(true), [])
   useState(() => {
     listeners.add(onActivate)
     return () => { listeners.delete(onActivate) }
   })
 
-  if (!user || !visible) return null
-
   const handleSwitch = async (role: string) => {
-    if (role === user.role) return
+    if (!user || role === user.role) return
     setSwitching(true)
     try {
       const res = await fetch('/api/dev/switch-role', {
@@ -64,6 +68,8 @@ export function DevTools() {
       setSwitching(false)
     }
   }
+
+  if (!user || !activated) return null
 
   return (
     <div className="fixed bottom-20 right-3 z-[999] md:bottom-4">

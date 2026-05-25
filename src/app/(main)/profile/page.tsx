@@ -21,11 +21,13 @@ import {
   Package,
   Truck,
   CircleCheck,
+  Bug,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BackHeader } from '@/components/common/back-header'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { useAuth } from '@/lib/hooks/use-auth'
+import { activateDevTools } from '@/components/dev/dev-tools'
 import { formatRelativeTime } from '@/lib/format'
 import { toast } from 'sonner'
 
@@ -288,6 +290,15 @@ export default function ProfilePage() {
         <LogOut className="h-[18px] w-[18px] stroke-[1.8]" />
         退出登录
       </Button>
+
+      {/* ===== 开发者工具入口 ===== */}
+      <button
+        onClick={activateDevTools}
+        className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl py-2 text-[10px] text-muted-foreground/30 transition-colors hover:text-muted-foreground/60"
+      >
+        <Bug className="h-3 w-3" />
+        <span>开发者工具</span>
+      </button>
       </div>
     </div>
   )
