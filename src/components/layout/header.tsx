@@ -21,10 +21,10 @@ export function Header() {
           onPointerDown={triggerDevTools}
         />
 
-        <Link href="/search" className="flex-1">
-          <div className="flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm text-muted-foreground">
-            <Search className="h-4 w-4 stroke-[2]" />
-            <span>搜索你想找的宝贝</span>
+        <Link href="/search" className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 truncate rounded-full bg-muted px-4 py-2 text-sm text-muted-foreground">
+            <Search className="h-4 w-4 shrink-0 stroke-[2]" />
+            <span className="truncate whitespace-nowrap">搜索你想找的宝贝</span>
           </div>
         </Link>
 
