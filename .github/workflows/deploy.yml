@@ -1,0 +1,39 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            cd /var/www/xianmiao
+
+            # 拉取最新代码
+            git pull origin main
+
+            # 安装依赖
+            pnpm install --frozen-lockfile
+
+            # 停止 MongoDB 释放内存
+            systemctl stop mongod 2>/dev/null || true
+
+            # 删除旧构建锁
+            rm -f .next/build-lock
+
+            # 构建（限制内存 512MB）
+            NODE_OPTIONS="--max-old-space-size=512" pnpm build
+
+            # 重启 MongoDB
+            systemctl start mongod 2>/dev/null || true
+
+            # 重启 PM2 服务
+            pm2 restart xianmiao || (PORT=3001 pm2 start npm --name xianmiao -- start && pm2 save)
