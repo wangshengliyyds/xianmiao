@@ -69,8 +69,8 @@ export default function LoginPage() {
       setCodeSent(true)
       setCountdown(60)
 
-      // 开发模式：显示验证码
-      if (data.dev_code && process.env.NODE_ENV === 'development') {
+      // 显示验证码（短信服务不可用时自动显示）
+      if (data.dev_code) {
         setDevCode(data.dev_code)
       }
 

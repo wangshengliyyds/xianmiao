@@ -58,34 +58,38 @@ export async function POST(request: Request) {
     }
 
     // 调用 Spug 短信服务发送验证码
+    let smsSent = false
     const spugUrl = process.env.SPUG_API_URL
     if (spugUrl) {
-    try {
-      const spugResponse = await fetch(spugUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone,
-          code,
-          content: `【闲妙】您的验证码是 ${code}，5分钟内有效，请勿泄露。`
+      try {
+        const spugResponse = await fetch(spugUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone,
+            code,
+            content: `【闲妙】您的验证码是 ${code}，5分钟内有效，请勿泄露。`
+          })
         })
-      })
-
-      if (!spugResponse.ok) {
-        console.error('Spug 短信发送失败:', await spugResponse.text())
-        // 即使短信发送失败，也返回成功，避免泄露信息
+        const spugResult = await spugResponse.json().catch(() => ({}))
+        if (spugResponse.ok && (spugResult as any).code === 200) {
+          smsSent = true
+          console.log(`[SMS] 验证码已发送至 ${phone}, request_id: ${(spugResult as any).request_id}`)
+        } else {
+          console.error('[SMS] Spug 发送失败:', spugResult)
+        }
+      } catch (spugError) {
+        console.error('[SMS] Spug 异常:', spugError)
       }
-    } catch (spugError) {
-      console.error('Spug 短信发送异常:', spugError)
     }
-    } // end if (spugUrl)
 
-    // 开发环境：返回验证码用于测试
+    // 返回验证码用于测试（短信服务不可用时自动显示）
     const response: Record<string, unknown> = {
       success: true,
       message: '验证码已发送',
     }
-    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG === 'true') {
+    // 未配置短信服务或发送失败时，在页面上显示验证码
+    if (!smsSent) {
       response.dev_code = code
     }
     return NextResponse.json(response)
