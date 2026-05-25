@@ -1,3 +1,13 @@
+pluginManagement {
+    repositories {
+        maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+        maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-releases/' }
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 include ':app'
 include ':capacitor-cordova-android-plugins'
 project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Search, Bell, User } from 'lucide-react'
 import { useUnread } from '@/lib/hooks/use-unread'
+import { triggerDevTools } from '@/components/dev/dev-tools'
 
 export function Header() {
   const { data } = useUnread()
@@ -12,7 +13,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-top">
       <div className="flex h-14 items-center px-4 max-w-2xl mx-auto">
         <Link href="/" className="flex items-center gap-2 mr-4">
-          <span className="text-xl font-bold text-primary">闲妙</span>
+          <span className="text-xl font-bold text-primary" onClick={triggerDevTools}>闲妙</span>
         </Link>
 
         <Link href="/search" className="flex-1">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { Bug, ChevronUp, UserCog } from 'lucide-react'
 import { toast } from 'sonner'
@@ -11,12 +11,36 @@ const accounts = [
   { role: 'admin',  label: '管理员', emoji: '🛡️' },
 ] as const
 
+// 连续点击 5 次激活开发者工具
+let tapCount = 0
+let tapTimer: ReturnType<typeof setTimeout> | null = null
+const listeners = new Set<(v: boolean) => void>()
+
+export function triggerDevTools() {
+  tapCount++
+  if (tapTimer) clearTimeout(tapTimer)
+  tapTimer = setTimeout(() => { tapCount = 0 }, 800)
+  if (tapCount >= 5) {
+    tapCount = 0
+    listeners.forEach(fn => fn(true))
+    toast.success('开发者模式已激活')
+  }
+}
+
 export function DevTools() {
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [switching, setSwitching] = useState(false)
+  const [visible, setVisible] = useState(process.env.NODE_ENV === 'development')
 
-  if (!user || process.env.NODE_ENV !== 'development') return null
+  // 注册激活监听器
+  const onActivate = useCallback((v: boolean) => setVisible(true), [])
+  useState(() => {
+    listeners.add(onActivate)
+    return () => { listeners.delete(onActivate) }
+  })
+
+  if (!user || !visible) return null
 
   const handleSwitch = async (role: string) => {
     if (role === user.role) return
