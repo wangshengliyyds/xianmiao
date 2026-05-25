@@ -74,7 +74,9 @@ export async function POST(request: Request) {
         const spugResult = await spugResponse.json().catch(() => ({}))
         if (spugResponse.ok && (spugResult as any).code === 200) {
           smsSent = true
-          console.log(`[SMS] 验证码已发送至 ${phone}, request_id: ${(spugResult as any).request_id}`)
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[SMS] 验证码已发送至 ${phone}`)
+          }
         } else {
           console.error('[SMS] Spug 发送失败:', spugResult)
         }
@@ -83,14 +85,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // 返回验证码用于测试（短信服务不可用时自动显示）
     const response: Record<string, unknown> = {
       success: true,
       message: '验证码已发送',
     }
-    // 未配置短信服务或发送失败时，在页面上显示验证码
     if (!smsSent) {
-      response.dev_code = code
+      if (process.env.NODE_ENV === 'development') {
+        response.dev_code = code
+      } else {
+        return NextResponse.json({ error: '验证码发送失败，请稍后重试' }, { status: 500 })
+      }
     }
     return NextResponse.json(response)
   } catch (err) {
