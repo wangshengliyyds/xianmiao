@@ -4,66 +4,71 @@ import { requireAdmin } from '@/lib/api-auth'
 
 // 创建举报
 export async function POST(request: Request) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { target_type, target_id, reason, description } = body
+
+    if (!target_type || !target_id || !reason) {
+      return NextResponse.json({ error: '缺少必要参数' }, { status: 400 })
+    }
+
+    const validReasons = ['fraud', 'prohibited', 'spam', 'inappropriate', 'other']
+    if (!validReasons.includes(reason)) {
+      return NextResponse.json({ error: '无效的举报原因' }, { status: 400 })
+    }
+
+    if (!['product', 'user', 'message'].includes(target_type)) {
+      return NextResponse.json({ error: '无效的举报类型' }, { status: 400 })
+    }
+
+    // 防止举报自己
+    if (target_type === 'user' && target_id === user.id) {
+      return NextResponse.json({ error: '不能举报自己' }, { status: 400 })
+    }
+
+    // 检查是否已举报过同一目标
+    const { data: existingReport } = await supabase
+      .from('reports')
+      .select('id')
+      .eq('reporter_id', user.id)
+      .eq('target_type', target_type)
+      .eq('target_id', target_id)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle()
+
+    if (existingReport) {
+      return NextResponse.json({ error: '您已举报过该目标，请勿重复举报' }, { status: 400 })
+    }
+
+    const { data, error } = await supabase
+      .from('reports')
+      .insert({
+        reporter_id: user.id,
+        target_type,
+        target_id,
+        reason,
+        description: description || null,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ data })
+  } catch (err) {
+    console.error('[reports] POST error:', err)
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }
-
-  const body = await request.json()
-  const { target_type, target_id, reason, description } = body
-
-  if (!target_type || !target_id || !reason) {
-    return NextResponse.json({ error: '缺少必要参数' }, { status: 400 })
-  }
-
-  const validReasons = ['fraud', 'prohibited', 'spam', 'inappropriate', 'other']
-  if (!validReasons.includes(reason)) {
-    return NextResponse.json({ error: '无效的举报原因' }, { status: 400 })
-  }
-
-  if (!['product', 'user', 'message'].includes(target_type)) {
-    return NextResponse.json({ error: '无效的举报类型' }, { status: 400 })
-  }
-
-  // 防止举报自己
-  if (target_type === 'user' && target_id === user.id) {
-    return NextResponse.json({ error: '不能举报自己' }, { status: 400 })
-  }
-
-  // 检查是否已举报过同一目标
-  const { data: existingReport } = await supabase
-    .from('reports')
-    .select('id')
-    .eq('reporter_id', user.id)
-    .eq('target_type', target_type)
-    .eq('target_id', target_id)
-    .eq('status', 'pending')
-    .limit(1)
-    .maybeSingle()
-
-  if (existingReport) {
-    return NextResponse.json({ error: '您已举报过该目标，请勿重复举报' }, { status: 400 })
-  }
-
-  const { data, error } = await supabase
-    .from('reports')
-    .insert({
-      reporter_id: user.id,
-      target_type,
-      target_id,
-      reason,
-      description: description || null,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ data })
 }
 
 // 获取举报列表（管理员）

@@ -59,63 +59,73 @@ export async function GET(request: Request) {
 
 // 添加收藏
 export async function POST(request: Request) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { product_id } = body
+
+    if (!product_id) {
+      return NextResponse.json({ error: '请指定商品' }, { status: 400 })
+    }
+
+    // 使用 upsert 防止并发重复收藏
+    const { error } = await supabase
+      .from('favorites')
+      .upsert({ user_id: user.id, product_id }, { onConflict: 'user_id,product_id', ignoreDuplicates: true })
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // 增加商品收藏数
+    await supabase.rpc('increment_fav_count', { product_id })
+
+    return NextResponse.json({ success: true }, { status: 201 })
+  } catch (err) {
+    console.error('[favorites] POST error:', err)
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }
-
-  const body = await request.json()
-  const { product_id } = body
-
-  if (!product_id) {
-    return NextResponse.json({ error: '请指定商品' }, { status: 400 })
-  }
-
-  // 使用 upsert 防止并发重复收藏
-  const { error } = await supabase
-    .from('favorites')
-    .upsert({ user_id: user.id, product_id }, { onConflict: 'user_id,product_id', ignoreDuplicates: true })
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // 增加商品收藏数
-  await supabase.rpc('increment_fav_count', { product_id })
-
-  return NextResponse.json({ success: true }, { status: 201 })
 }
 
 // 取消收藏
 export async function DELETE(request: Request) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const product_id = searchParams.get('product_id')
+
+    if (!product_id) {
+      return NextResponse.json({ error: '请指定商品' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('favorites')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('product_id', product_id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // 减少商品收藏数
+    await supabase.rpc('decrement_fav_count', { product_id })
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('[favorites] DELETE error:', err)
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }
-
-  const { searchParams } = new URL(request.url)
-  const product_id = searchParams.get('product_id')
-
-  if (!product_id) {
-    return NextResponse.json({ error: '请指定商品' }, { status: 400 })
-  }
-
-  const { error } = await supabase
-    .from('favorites')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('product_id', product_id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // 减少商品收藏数
-  await supabase.rpc('decrement_fav_count', { product_id })
-
-  return NextResponse.json({ success: true })
 }

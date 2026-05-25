@@ -6,32 +6,37 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const { id } = await params
+  try {
+    const supabase = await createClient()
+    const { id } = await params
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '请先登录' }, { status: 401 })
+    }
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        product:products(id, title, price, description, images:product_images(url, is_cover)),
+        buyer:profiles!buyer_id(id, nickname, avatar_url, phone),
+        seller:profiles!seller_id(id, nickname, avatar_url, phone),
+        status_logs:order_status_logs(*)
+      `)
+      .eq('id', id)
+      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: '订单不存在' }, { status: 404 })
+    }
+
+    return NextResponse.json({ data })
+  } catch (err) {
+    console.error('[orders/[id]] GET error:', err)
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
   }
-
-  const { data, error } = await supabase
-    .from('orders')
-    .select(`
-      *,
-      product:products(id, title, price, description, images:product_images(url, is_cover)),
-      buyer:profiles!buyer_id(id, nickname, avatar_url, phone),
-      seller:profiles!seller_id(id, nickname, avatar_url, phone),
-      status_logs:order_status_logs(*)
-    `)
-    .eq('id', id)
-    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: '订单不存在' }, { status: 404 })
-  }
-
-  return NextResponse.json({ data })
 }
 
 // 更新订单状态
