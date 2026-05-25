@@ -35,7 +35,7 @@ export default function MapPage() {
       if (!document.querySelector('link[href*="leaflet"]')) {
         const link = document.createElement('link')
         link.rel = 'stylesheet'
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+        link.href = '/leaflet.css'
         document.head.appendChild(link)
       }
 
@@ -75,8 +75,9 @@ export default function MapPage() {
 
     const map = L.map(mapRef.current).setView([loc.lat, loc.lng], 13)
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
+    L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+      subdomains: ['1', '2', '3', '4'],
+      attribution: '&copy; 高德地图',
     }).addTo(map)
 
     mapInstanceRef.current = map
