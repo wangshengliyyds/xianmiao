@@ -47,7 +47,12 @@ export async function PATCH(
     return NextResponse.json({ error: '请先登录' }, { status: 401 })
   }
 
-  const body = await request.json()
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+  }
   const { action, remark } = body
 
   // 获取当前订单
@@ -124,14 +129,20 @@ export async function PATCH(
     }
   }
 
+  // 乐观锁：更新时检查当前状态未被其他请求改变
   const { data, error } = await supabase
     .from('orders')
     .update(updateData)
     .eq('id', id)
+    .eq('status', order.status)
     .select()
     .single()
 
   if (error) {
+    // 如果更新失败（被其他请求抢先更新），返回冲突错误
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: '订单状态已被其他操作改变，请刷新后重试' }, { status: 409 })
+    }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 

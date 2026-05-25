@@ -36,14 +36,18 @@ export async function PATCH(request: Request) {
 
   const supabase = await createClient()
 
-  const body = await request.json()
+  try {
+    const body = await request.json()
 
-  // 尝试更新设置
-  const { error } = await supabase
-    .from('system_settings')
-    .upsert({ key: 'app_settings', value: body, updated_at: new Date().toISOString() })
+    // 尝试更新设置
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ key: 'app_settings', value: body, updated_at: new Date().toISOString() })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ success: true, data: body })
+    return NextResponse.json({ success: true, data: body })
+  } catch {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+  }
 }

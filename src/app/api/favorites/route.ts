@@ -73,22 +73,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '请指定商品' }, { status: 400 })
   }
 
-  // 检查是否已收藏
-  const { data: existing } = await supabase
-    .from('favorites')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .eq('product_id', product_id)
-    .single()
-
-  if (existing) {
-    return NextResponse.json({ error: '已收藏' }, { status: 400 })
-  }
-
-  // 添加收藏
+  // 使用 upsert 防止并发重复收藏
   const { error } = await supabase
     .from('favorites')
-    .insert({ user_id: user.id, product_id })
+    .upsert({ user_id: user.id, product_id }, { onConflict: 'user_id,product_id', ignoreDuplicates: true })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

@@ -34,7 +34,13 @@ export async function PATCH(request: Request) {
   if ('error' in auth) return auth.error
 
   const supabase = await createClient()
-  const body = await request.json()
+
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+  }
   const { order_id, action, remark } = body
 
   if (!order_id || !action) {
@@ -52,17 +58,27 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: '无效操作' }, { status: 400 })
   }
 
-  // 先获取订单的 product_id
+  // 先获取订单的当前状态和 product_id
   const { data: currentOrder } = await supabase
     .from('orders')
-    .select('product_id')
+    .select('id, status, product_id')
     .eq('id', order_id)
     .single()
+
+  if (!currentOrder) {
+    return NextResponse.json({ error: '订单不存在' }, { status: 404 })
+  }
+
+  // 只允许处理退款中的订单
+  if (!['refunding', 'disputed'].includes(currentOrder.status)) {
+    return NextResponse.json({ error: '该订单不在争议状态，无法处理' }, { status: 400 })
+  }
 
   const { error } = await supabase
     .from('orders')
     .update({ status: newStatus, remark: remark || null })
     .eq('id', order_id)
+    .eq('status', currentOrder.status)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

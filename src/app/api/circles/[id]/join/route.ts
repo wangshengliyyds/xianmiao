@@ -57,24 +57,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (!circle) return NextResponse.json({ error: '圈子不存在' }, { status: 404 })
 
-    // 检查是否已加入
-    const { data: existing } = await supabase
-      .from('circle_members')
-      .select('user_id')
-      .eq('circle_id', id)
-      .eq('user_id', user.id)
-      .single()
-
-    if (existing) return NextResponse.json({ error: '已加入该圈子' }, { status: 400 })
-
-    // 加入圈子
+    // 使用 upsert 防止并发重复加入
     const { error } = await supabase
       .from('circle_members')
-      .insert({ circle_id: id, user_id: user.id })
+      .upsert({ circle_id: id, user_id: user.id }, { onConflict: 'circle_id,user_id', ignoreDuplicates: true })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // 增加成员数
+    // 增加成员数（如果已存在，RPC 内部应做幂等处理）
     await supabase.rpc('increment_circle_members', { circle_id: id })
 
     return NextResponse.json({ success: true })

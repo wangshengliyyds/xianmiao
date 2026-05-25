@@ -33,27 +33,31 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: '请先登录' }, { status: 401 })
   }
 
-  const body = await request.json()
+  try {
+    const body = await request.json()
 
-  // 验证输入
-  const result = profileSchema.safeParse(body)
-  if (!result.success) {
-    return NextResponse.json(
-      { error: result.error.errors[0].message },
-      { status: 400 }
-    )
+    // 验证输入
+    const result = profileSchema.safeParse(body)
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.errors[0].message },
+        { status: 400 }
+      )
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(result.data)
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ data })
+  } catch {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
   }
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(result.data)
-    .eq('id', user.id)
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ data })
 }

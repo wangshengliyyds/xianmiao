@@ -27,6 +27,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '无效的举报类型' }, { status: 400 })
   }
 
+  // 防止举报自己
+  if (target_type === 'user' && target_id === user.id) {
+    return NextResponse.json({ error: '不能举报自己' }, { status: 400 })
+  }
+
+  // 检查是否已举报过同一目标
+  const { data: existingReport } = await supabase
+    .from('reports')
+    .select('id')
+    .eq('reporter_id', user.id)
+    .eq('target_type', target_type)
+    .eq('target_id', target_id)
+    .eq('status', 'pending')
+    .limit(1)
+    .maybeSingle()
+
+  if (existingReport) {
+    return NextResponse.json({ error: '您已举报过该目标，请勿重复举报' }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('reports')
     .insert({

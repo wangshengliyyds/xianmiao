@@ -54,7 +54,12 @@ export async function PATCH(request: Request) {
 
   const supabase = await createClient()
 
-  const body = await request.json()
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+  }
   const { id, action } = body
 
   if (!id || !action) {
@@ -106,6 +111,18 @@ export async function PATCH(request: Request) {
   }
 
   if (action === 'delete') {
+    // 检查是否有活跃订单
+    const { data: activeOrders } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('product_id', id)
+      .in('status', ['pending_pay', 'paid', 'shipped', 'delivered'])
+      .limit(1)
+
+    if (activeOrders && activeOrders.length > 0) {
+      return NextResponse.json({ error: '该商品有进行中的订单，无法删除' }, { status: 400 })
+    }
+
     // 永久删除：先删图片再删商品
     await supabase.from('product_images').delete().eq('product_id', id)
     const { error } = await supabase.from('products').delete().eq('id', id)

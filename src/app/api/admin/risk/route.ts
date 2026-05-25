@@ -23,11 +23,16 @@ export async function PATCH(request: Request) {
   if ('error' in auth) return auth.error
 
   const supabase = await createClient()
-  const body = await request.json()
-  const { error } = await supabase
-    .from('system_settings')
-    .upsert({ key: 'risk_rules', value: body, updated_at: new Date().toISOString() })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true, data: body })
+  try {
+    const body = await request.json()
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ key: 'risk_rules', value: body, updated_at: new Date().toISOString() })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, data: body })
+  } catch {
+    return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
+  }
 }
