@@ -13,8 +13,10 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-top">
       <div className="flex h-14 items-center px-4 max-w-2xl mx-auto">
         <Link href="/" className="flex items-center gap-2 mr-4">
-          <span className="text-xl font-bold text-primary" onClick={triggerDevTools}>闲妙</span>
+          <span className="text-xl font-bold text-primary">闲妙</span>
         </Link>
+        {/* 开发者工具隐形触发区：连续点击此处5次 */}
+        <span className="h-8 w-2 cursor-default select-none" onPointerDown={triggerDevTools} />
 
         <Link href="/search" className="flex-1">
           <div className="flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm text-muted-foreground">
