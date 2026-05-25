@@ -43,8 +43,8 @@ export default function AdminProductsPage() {
         <p className="mt-1 text-sm text-muted-foreground">查看全平台商品数据，审核由 AI 自动处理</p>
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索商品..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
@@ -56,7 +56,7 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

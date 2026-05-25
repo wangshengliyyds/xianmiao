@@ -93,8 +93,8 @@ export default function AdminReportsPage() {
         <p className="mt-1 text-sm text-muted-foreground">审查用户举报，处理违规内容</p>
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2">
           {['all', 'pending', 'reviewing', 'resolved', 'dismissed'].map((s) => (
             <Button
               key={s}
@@ -114,7 +114,7 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

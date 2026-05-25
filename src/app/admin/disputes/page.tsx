@@ -62,15 +62,15 @@ export default function AdminDisputesPage() {
     <div>
       <h1 className="mb-6 text-2xl font-bold">交易纠纷</h1>
 
-      <div className="mb-4 flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative w-full md:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索订单号..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <span className="text-sm text-muted-foreground">共 {filtered.length} 条</span>
       </div>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

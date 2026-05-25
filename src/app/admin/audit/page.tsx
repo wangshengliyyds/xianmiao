@@ -74,7 +74,7 @@ export default function AdminAuditPage() {
     <div>
       <h1 className="mb-6 text-2xl font-bold">审计日志</h1>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

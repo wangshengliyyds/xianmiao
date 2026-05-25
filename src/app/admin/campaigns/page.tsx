@@ -96,7 +96,7 @@ export default function AdminCampaignsPage() {
         </Button>
       </div>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

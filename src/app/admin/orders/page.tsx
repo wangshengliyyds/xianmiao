@@ -66,7 +66,7 @@ export default function AdminOrdersPage() {
       <h1 className="mb-6 text-2xl font-bold">订单管理</h1>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative w-64">
+        <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="搜索订单号..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
@@ -88,7 +88,7 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

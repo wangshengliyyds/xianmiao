@@ -83,7 +83,7 @@ export default function AdminAiReviewPage() {
     <div>
       <h1 className="mb-6 text-2xl font-bold">AI审核</h1>
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
         <div className="rounded-2xl border bg-card p-4">
           <div className="flex items-center gap-2 text-yellow-600">
             <Clock className="h-5 w-5" />
@@ -107,7 +107,7 @@ export default function AdminAiReviewPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-card admin-table-wrap overflow-hidden">
+      <div className="rounded-2xl border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
