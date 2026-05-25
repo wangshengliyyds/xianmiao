@@ -9,7 +9,7 @@ files:
 
 win:
   target:
-    - nsis
+    - portable
   icon: electron/assets/icon.png
 
 mac:

@@ -1,6 +1,8 @@
 {
   "name": "xianmiao",
   "version": "0.1.0",
+  "description": "闲妙 - AI智能二手交易平台",
+  "author": "xianmiao",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
