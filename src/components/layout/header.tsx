@@ -15,8 +15,11 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2 mr-4">
           <span className="text-xl font-bold text-primary">闲妙</span>
         </Link>
-        {/* 开发者工具隐形触发区：连续点击此处5次 */}
-        <span className="h-8 w-2 cursor-default select-none" onPointerDown={triggerDevTools} />
+        {/* 开发者工具触发区：标题右侧连续点击5次 */}
+        <span
+          className="h-8 w-8 shrink-0 cursor-default select-none rounded-full"
+          onPointerDown={triggerDevTools}
+        />
 
         <Link href="/search" className="flex-1">
           <div className="flex items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm text-muted-foreground">
