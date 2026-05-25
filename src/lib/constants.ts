@@ -2,6 +2,8 @@ export const APP_NAME = '闲妙'
 export const APP_DESCRIPTION = 'AI驱动的同城二手闲置交易平台'
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+export const IS_ELECTRON = typeof window !== 'undefined' && (window as any).electronPlatform?.isElectron === true
+
 export const PRODUCT_CONDITIONS = [
   { value: 'new', label: '全新' },
   { value: 'like_new', label: '几乎全新' },
