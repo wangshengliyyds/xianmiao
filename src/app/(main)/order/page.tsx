@@ -27,26 +27,17 @@ export default function OrderListPage() {
   const { user, loading: authLoading } = useAuth()
 
   const initialStatus = searchParams.get('status') || 'all'
-  const initialRole = (searchParams.get('role') as 'buyer' | 'seller') || 'buyer'
 
-  const isBuyer = user?.role === 'buyer'
+  // 根据用户角色自动决定：买家看买到的，非买家（卖家/管理员）看卖出的
+  const role: 'buyer' | 'seller' = user?.role === 'buyer' ? 'buyer' : 'seller'
 
-  // 非买家访问 buyer 视图时重定向到 seller 视图
   const [activeStatus, setActiveStatus] = useState(initialStatus)
-  const [role, setRole] = useState<'buyer' | 'seller'>(initialRole)
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
-    if (authLoading || !user) return
-    if (!isBuyer && role === 'buyer') {
-      setRole('seller')
-    }
-  }, [user, authLoading, isBuyer, role])
-
-  // 切换角色或状态时重置页码
+  // 切换状态时重置页码
   useEffect(() => {
     setPage(1)
-  }, [role, activeStatus])
+  }, [activeStatus])
 
   const { data, isLoading } = useOrders(
     role,
@@ -61,35 +52,7 @@ export default function OrderListPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <BackHeader title="我的订单" />
-
-      {/* 角色切换 */}
-      <div className="mx-auto max-w-2xl px-4 pt-4">
-        <div className="flex gap-1 rounded-xl bg-muted p-1">
-          {isBuyer && (
-            <button
-              onClick={() => setRole('buyer')}
-              className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
-                role === 'buyer'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              我买到的
-            </button>
-          )}
-          <button
-            onClick={() => setRole('seller')}
-            className={`${isBuyer ? 'flex-1' : 'w-full'} rounded-lg py-2 text-sm font-medium transition-all ${
-              role === 'seller'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            我卖出的
-          </button>
-        </div>
-      </div>
+      <BackHeader title={role === 'buyer' ? '我买到的' : '我卖出的'} />
 
       {/* 状态筛选栏 */}
       <div className="mx-auto max-w-2xl overflow-x-auto px-4 pt-3">
