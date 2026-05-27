@@ -22,6 +22,7 @@ import {
   Truck,
   CircleCheck,
   Bug,
+  BadgeCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BackHeader } from '@/components/common/back-header'
@@ -88,6 +89,21 @@ export default function ProfilePage() {
     await logout()
     toast.success('已退出登录')
     router.push('/login')
+  }
+
+  const handleUpgradeToSeller = async () => {
+    try {
+      const res = await fetch('/api/profile/upgrade-to-seller', { method: 'POST' })
+      if (!res.ok) {
+        const err = await res.json()
+        toast.error(err.error || '升级失败')
+        return
+      }
+      toast.success('已成功升级为卖家')
+      window.location.reload()
+    } catch {
+      toast.error('升级失败，请重试')
+    }
   }
 
   if (loading) {
@@ -239,6 +255,18 @@ export default function ProfilePage() {
 
       {/* ===== 设置区 ===== */}
       <div className="mb-4 rounded-2xl border bg-card">
+        {isBuyer && (
+          <button
+            onClick={handleUpgradeToSeller}
+            className="flex w-full items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/50 rounded-t-2xl"
+          >
+            <div className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-primary/10">
+              <BadgeCheck className="h-[18px] w-[18px] stroke-[1.8] text-primary" />
+            </div>
+            <span className="flex-1 text-sm font-medium">成为卖家</span>
+            <ChevronRight className="h-4 w-4 stroke-[2] text-muted-foreground/40" />
+          </button>
+        )}
         {isSeller && (
           <Link
             href="/merchant"

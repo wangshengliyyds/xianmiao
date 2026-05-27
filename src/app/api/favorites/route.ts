@@ -75,16 +75,18 @@ export async function POST(request: Request) {
     }
 
     // 使用 upsert 防止并发重复收藏
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('favorites')
-      .upsert({ user_id: user.id, product_id }, { onConflict: 'user_id,product_id', ignoreDuplicates: true })
+      .upsert({ user_id: user.id, product_id }, { onConflict: 'user_id,product_id', ignoreDuplicates: true, count: 'exact' })
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // 增加商品收藏数
-    await supabase.rpc('increment_fav_count', { product_id })
+    // 仅在实际插入新行时增加收藏数（ignoreDuplicates 时 count 不含被忽略的行）
+    if (count && count > 0) {
+      await supabase.rpc('increment_fav_count', { product_id })
+    }
 
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (err) {
@@ -110,9 +112,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: '请指定商品' }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('favorites')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('user_id', user.id)
       .eq('product_id', product_id)
 
@@ -120,8 +122,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // 减少商品收藏数
-    await supabase.rpc('decrement_fav_count', { product_id })
+    // 仅在实际删除了行时减少收藏数
+    if (count && count > 0) {
+      await supabase.rpc('decrement_fav_count', { product_id })
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

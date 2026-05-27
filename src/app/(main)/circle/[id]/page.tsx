@@ -28,14 +28,13 @@ export default function CircleDetailPage() {
     const fetchData = async () => {
       try {
         const [circleRes, membersRes] = await Promise.all([
-          fetch(`/api/circles`),
+          fetch(`/api/circles/${params.id}`),
           fetch(`/api/circles/${params.id}/join`),
         ])
 
         if (circleRes.ok) {
           const { data } = await circleRes.json()
-          const found = (data || []).find((c: Circle) => c.id === params.id)
-          if (found) setCircle(found)
+          if (data) setCircle(data)
         }
 
         if (membersRes.ok) {

@@ -23,6 +23,7 @@ export default function SearchPage() {
   const [sort, setSort] = useState('newest')
   const [categories, setCategories] = useState<Category[]>([])
   const [showHistory, setShowHistory] = useState(!initialKeyword)
+  const [page, setPage] = useState(1)
 
   const { recentSearches, addRecentSearch, clearRecentSearches } = useProductStore()
 
@@ -30,7 +31,7 @@ export default function SearchPage() {
     category_id: categoryId ? parseInt(categoryId) : undefined,
     condition: condition as ProductCondition || undefined,
     sort: sort as 'newest' | 'price_asc' | 'price_desc' | 'popular',
-  }, 1, 40)
+  }, page, 20)
 
   useEffect(() => {
     fetch('/api/categories')
@@ -44,6 +45,7 @@ export default function SearchPage() {
       setKeyword(q.trim())
       addRecentSearch(q.trim())
       setShowHistory(false)
+      setPage(1)
     }
   }
 
@@ -119,12 +121,12 @@ export default function SearchPage() {
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             {/* 分类筛选 */}
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v || '')}>
+            <Select value={categoryId || 'all'} onValueChange={(v) => setCategoryId(v === 'all' || !v ? '' : v)}>
               <SelectTrigger className="w-auto">
                 <SelectValue placeholder="全部分类" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部分类</SelectItem>
+                <SelectItem value="all">全部分类</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id.toString()}>
                     {cat.name}
@@ -134,12 +136,12 @@ export default function SearchPage() {
             </Select>
 
             {/* 成色筛选 */}
-            <Select value={condition} onValueChange={(v) => setCondition(v || '')}>
+            <Select value={condition || 'all'} onValueChange={(v) => setCondition(v === 'all' || !v ? '' : v)}>
               <SelectTrigger className="w-auto">
                 <SelectValue placeholder="全部成色" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部成色</SelectItem>
+                <SelectItem value="all">全部成色</SelectItem>
                 {PRODUCT_CONDITIONS.map((c) => (
                   <SelectItem key={c.value} value={c.value}>
                     {c.label}
@@ -171,6 +173,14 @@ export default function SearchPage() {
 
           {/* 商品列表 */}
           <ProductGrid products={products} loading={isLoading} />
+
+          {data && data.has_more && (
+            <div className="mt-4 text-center">
+              <Button variant="ghost" onClick={() => setPage((p) => p + 1)}>
+                加载更多
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -1,5 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+
+const BUCKET_NAME = 'products'
+
+async function ensureBucket(admin: ReturnType<typeof createAdminClient>) {
+  const { data: buckets } = await admin.storage.listBuckets()
+  const exists = buckets?.some((b) => b.name === BUCKET_NAME)
+  if (!exists) {
+    await admin.storage.createBucket(BUCKET_NAME, { public: true })
+  }
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -33,9 +44,13 @@ export async function POST(request: Request) {
     const ext = mimeToExt[file.type] || 'jpg'
     const fileName = `${user.id}/${Date.now()}.${ext}`
 
+    // 使用 admin 客户端（绕过 RLS），并确保存储桶存在
+    const admin = createAdminClient()
+    await ensureBucket(admin)
+
     // 上传到 Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('products')
+    const { data, error } = await admin.storage
+      .from(BUCKET_NAME)
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false,
@@ -46,8 +61,8 @@ export async function POST(request: Request) {
     }
 
     // 获取公开 URL
-    const { data: urlData } = supabase.storage
-      .from('products')
+    const { data: urlData } = admin.storage
+      .from(BUCKET_NAME)
       .getPublicUrl(data.path)
 
     return NextResponse.json({

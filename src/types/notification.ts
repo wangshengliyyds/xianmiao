@@ -8,6 +8,7 @@ export interface Notification {
   title: string
   content: string | null
   data: Record<string, unknown> | null
+  link: string | null
   is_read: boolean
   channels_sent: string[] | null
   created_at: string

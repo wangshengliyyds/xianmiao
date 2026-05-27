@@ -42,13 +42,16 @@ export async function sendNotification(
   }
 
   // 写入数据库通知
-  await supabase.from('notifications').insert({
+  const { error: insertError } = await supabase.from('notifications').insert({
     user_id: params.user_id,
     type: params.type,
     title: params.title,
     content: params.content,
     link: params.link,
   })
+  if (insertError) {
+    console.error('[notifications] 插入失败:', insertError)
+  }
 
   // 发送 Web Push（不阻塞主流程）
   sendPushToUser(supabase, params.user_id, {

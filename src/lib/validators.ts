@@ -55,8 +55,8 @@ export const orderCreateSchema = z.object({
 
 export const messageSchema = z.object({
   conversation_id: z.string().uuid(),
-  type: z.enum(['text', 'image', 'voice', 'product_card', 'offer']),
-  content: z.string().max(5000),
+  type: z.enum(['text', 'image', 'voice', 'product_card', 'offer', 'order_push', 'system']),
+  content: z.string().max(5000).optional().nullable(),
   metadata: z.record(z.unknown()).optional(),
 })
 

@@ -21,9 +21,11 @@ export function RefundDialog({ open, onClose, orderId, onSuccess }: RefundDialog
 
   const handleSubmit = async () => {
     if (!reason) {
+      toast.error('请选择退款原因')
       return
     }
     if (!description.trim()) {
+      toast.error('请填写详细说明')
       return
     }
     setSubmitting(true)

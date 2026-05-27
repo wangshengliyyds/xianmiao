@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ data: data || [], total: count || 0 })
+  return NextResponse.json({ data: data || [], total: count || 0, page, page_size: pageSize, has_more: (page * pageSize) < (count || 0) })
 }
 
 export async function PATCH(request: Request) {
@@ -59,11 +59,15 @@ export async function PATCH(request: Request) {
   }
 
   // 先获取订单的当前状态和 product_id
-  const { data: currentOrder } = await supabase
+  const { data: currentOrder, error: fetchError } = await supabase
     .from('orders')
     .select('id, status, product_id')
     .eq('id', order_id)
     .single()
+
+  if (fetchError) {
+    return NextResponse.json({ error: '查询订单失败' }, { status: 500 })
+  }
 
   if (!currentOrder) {
     return NextResponse.json({ error: '订单不存在' }, { status: 404 })

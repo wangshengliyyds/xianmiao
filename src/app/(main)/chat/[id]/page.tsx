@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ChatBubble } from '@/components/chat/chat-bubble'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
 import { ReportDialog } from '@/components/common/report-dialog'
-import { useMessages, useSendMessage } from '@/lib/hooks/use-conversations'
+import { useMessages, useSendMessage, useLoadMoreMessages } from '@/lib/hooks/use-conversations'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { doUpload } from '@/lib/hooks/use-upload'
@@ -31,6 +31,8 @@ export default function ChatDetailPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const { data, isLoading } = useMessages(conversationId)
+  const loadMoreMutation = useLoadMoreMessages()
+  const [loadingMore, setLoadingMore] = useState(false)
 
   // 消息加载后刷新未读计数
   useEffect(() => {
@@ -108,6 +110,33 @@ export default function ChatDetailPage() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
+    }
+  }
+
+  const handleLoadMore = async () => {
+    if (messages.length === 0 || loadingMore) return
+    setLoadingMore(true)
+    try {
+      const oldest = messages[0]
+      const result = await loadMoreMutation.mutateAsync({
+        conversationId,
+        before: oldest.created_at,
+      })
+      if (result.data.length > 0) {
+        queryClient.setQueryData(
+          ['messages', conversationId],
+          (old: { data: MessageWithSender[]; has_more: boolean } | undefined) => {
+            if (!old) return old
+            const existingIds = new Set(old.data.map(m => m.id))
+            const newItems = result.data.filter(m => !existingIds.has(m.id))
+            return { ...old, data: [...newItems, ...old.data], has_more: result.has_more }
+          }
+        )
+      }
+    } catch {
+      toast.error('加载历史消息失败')
+    } finally {
+      setLoadingMore(false)
     }
   }
 
@@ -196,6 +225,17 @@ export default function ChatDetailPage() {
           </div>
         ) : (
           <>
+            {data?.has_more && (
+              <div className="mb-4 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="rounded-full bg-muted px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/80"
+                >
+                  {loadingMore ? '加载中...' : '加载更多历史消息'}
+                </button>
+              </div>
+            )}
             {messages.map((message: MessageWithSender) => (
               <ChatBubble
                 key={message.id}

@@ -56,6 +56,14 @@ export function SmartImage({ src, alt, fill, width, height, className, sizes, pr
     )
   }
 
+  if (failed) {
+    return (
+      <div className={cn('flex items-center justify-center bg-muted text-muted-foreground text-xs', fill ? 'absolute inset-0' : '', className)}>
+        加载失败
+      </div>
+    )
+  }
+
   return (
     <Image
       src={src}
@@ -66,6 +74,7 @@ export function SmartImage({ src, alt, fill, width, height, className, sizes, pr
       className={className}
       sizes={sizes}
       priority={priority}
+      onError={() => setFailed(true)}
     />
   )
 }

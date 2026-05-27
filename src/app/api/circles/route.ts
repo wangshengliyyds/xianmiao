@@ -39,11 +39,17 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     // 创建者自动成为成员
-    await supabase.from('circle_members').insert({
+    const { error: memberError } = await supabase.from('circle_members').insert({
       circle_id: data.id,
       user_id: user.id,
       role: 'owner',
     })
+
+    if (memberError) {
+      // 回滚：删除刚创建的圈子
+      await supabase.from('circles').delete().eq('id', data.id)
+      return NextResponse.json({ error: '创建圈子失败' }, { status: 500 })
+    }
 
     return NextResponse.json({ data }, { status: 201 })
   } catch {

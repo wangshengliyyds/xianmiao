@@ -26,7 +26,19 @@ export function useAuth() {
         } else {
           setUser(null)
         }
-      } catch {
+      } catch (err: unknown) {
+        // 仅 token 过期/无效时清理脏 session，网络错误不清理
+        const msg = err instanceof Error ? err.message : ''
+        if (msg.includes('Refresh Token') || msg.includes('AuthApiError')) {
+          try { await supabase.auth.signOut() } catch {}
+          // 手动清除 Supabase auth cookie（signOut 在 token 无效时可能无法清除 cookie）
+          document.cookie.split(';').forEach((c) => {
+            const name = c.trim().split('=')[0]
+            if (name.startsWith('sb-')) {
+              document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+            }
+          })
+        }
         setUser(null)
       } finally {
         setLoading(false)

@@ -109,20 +109,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '不能和自己聊天' }, { status: 400 })
     }
 
-    // 检查是否已存在私聊会话（使用单次 join 查询避免 N+1）
-    const { data: existingConv } = await supabase
+    // 检查是否已存在私聊会话
+    const { data: targetMembers, error: targetErr } = await supabase
       .from('conversation_members')
-      .select('conversation_id, conversations!inner(type)')
-      .eq('user_id', user.id)
-      .eq('conversations.type', 'private')
-      .in('conversation_id',
-        (await supabase
-          .from('conversation_members')
-          .select('conversation_id')
-          .eq('user_id', target_user_id)
-        ).data?.map(m => m.conversation_id) || []
-      )
-      .maybeSingle()
+      .select('conversation_id')
+      .eq('user_id', target_user_id)
+
+    if (targetErr) {
+      return NextResponse.json({ error: '查询失败' }, { status: 500 })
+    }
+
+    const targetConvIds = (targetMembers || []).map(m => m.conversation_id)
+
+    let existingConv = null
+    if (targetConvIds.length > 0) {
+      const { data } = await supabase
+        .from('conversation_members')
+        .select('conversation_id, conversations!inner(type)')
+        .eq('user_id', user.id)
+        .eq('conversations.type', 'private')
+        .in('conversation_id', targetConvIds)
+        .maybeSingle()
+      existingConv = data
+    }
 
     if (existingConv) {
       return NextResponse.json({
@@ -143,10 +152,16 @@ export async function POST(request: Request) {
     }
 
     // 添加成员（使用 upsert 防止并发创建导致重复）
-    await supabase.from('conversation_members').upsert([
+    const { error: memberError } = await supabase.from('conversation_members').upsert([
       { conversation_id: conversation.id, user_id: user.id },
       { conversation_id: conversation.id, user_id: target_user_id },
     ], { onConflict: 'conversation_id,user_id' })
+
+    if (memberError) {
+      // 回滚：删除刚创建的会话
+      await supabase.from('conversations').delete().eq('id', conversation.id)
+      return NextResponse.json({ error: '创建会话失败' }, { status: 500 })
+    }
 
     // 如果关联了商品，发送商品卡片消息
     if (product_id) {

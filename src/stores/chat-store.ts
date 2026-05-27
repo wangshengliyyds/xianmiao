@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+// 注意：useUnread hook 会调用 setTotalUnread 同步未读数
+
 interface ChatState {
   totalUnread: number
   activeConversationId: string | null

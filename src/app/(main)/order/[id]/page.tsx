@@ -94,7 +94,6 @@ export default function OrderDetailPage() {
 
   const handlePaymentConfirm = async (method: 'alipay' | 'wechat') => {
     await handleAction('pay')
-    toast.success(`已通过${method === 'alipay' ? '支付宝' : '微信支付'}付款`)
     setShowPayment(false)
   }
 
@@ -117,6 +116,12 @@ export default function OrderDetailPage() {
       }
       toast.success('评价成功')
       setShowRating(false)
+      // 重新获取订单数据以更新评价状态
+      const refreshRes = await fetch(`/api/orders/${order.id}`)
+      if (refreshRes.ok) {
+        const { data } = await refreshRes.json()
+        setOrder(data)
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : '评价失败')
     } finally {

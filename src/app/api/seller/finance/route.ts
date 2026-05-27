@@ -23,8 +23,9 @@ export async function GET(request: Request) {
     // 卖家收入概览
     const { data: orders } = await supabase
       .from('orders')
-      .select('pay_amount, commission, status, created_at')
+      .select('pay_amount, commission, status, created_at, updated_at')
       .eq('seller_id', auth.user.id)
+      .in('status', ['completed', 'paid', 'shipped', 'delivered'])
 
     const completed = (orders || []).filter((o) => o.status === 'completed')
     const totalSales = completed.reduce((sum, o) => sum + (o.pay_amount || 0), 0)
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
       nextDay.setDate(nextDay.getDate() + 1)
       const nextDayStr = nextDay.toISOString().split('T')[0]
 
-      const dayOrders = completed.filter((o) => o.created_at >= dateStr && o.created_at < nextDayStr)
+      const dayOrders = completed.filter((o) => o.updated_at >= dateStr && o.updated_at < nextDayStr)
       const daySales = dayOrders.reduce((sum, o) => sum + (o.pay_amount || 0), 0)
       const dayCommission = dayOrders.reduce((sum, o) => sum + (o.commission || 0), 0)
       dailyTrend.push({

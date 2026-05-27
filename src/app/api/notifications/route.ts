@@ -74,12 +74,13 @@ export async function PATCH(request: Request) {
         .update({ is_read: true })
         .eq('user_id', user.id)
         .eq('is_read', false)
-    } else if (ids && ids.length > 0) {
+    } else if (ids && Array.isArray(ids) && ids.length > 0) {
+      const safeIds = ids.slice(0, 100)
       await supabase
         .from('notifications')
         .update({ is_read: true })
         .eq('user_id', user.id)
-        .in('id', ids)
+        .in('id', safeIds)
     }
 
     return NextResponse.json({ success: true })

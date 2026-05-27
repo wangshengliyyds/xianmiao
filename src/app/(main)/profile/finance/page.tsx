@@ -201,8 +201,8 @@ export default function SellerFinancePage() {
         <div className="mb-4 rounded-2xl border bg-card p-4">
           <h3 className="mb-3 text-sm font-semibold">近7天收入</h3>
           <div className="flex items-end gap-1.5 h-32">
-            {data.daily_trend.map((day) => {
-              const maxVal = Math.max(...data.daily_trend.map((d) => d.earnings), 1)
+            {(data.daily_trend || []).map((day) => {
+              const maxVal = Math.max(...(data.daily_trend || []).map((d) => d.earnings), 1)
               const height = maxVal > 0 ? Math.max((day.earnings / maxVal) * 100, 4) : 4
               const weekday = new Date(day.date).toLocaleDateString('zh-CN', { weekday: 'short' })
               return (

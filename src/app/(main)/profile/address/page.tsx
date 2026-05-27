@@ -53,8 +53,12 @@ export default function AddressPage() {
   }
 
   const handleSave = async () => {
-    if (!form.name || !form.phone || !form.detail) {
+    if (!form.name || !form.phone || !form.province || !form.city || !form.district || !form.detail) {
       toast.error('请填写完整信息')
+      return
+    }
+    if (!/^1[3-9]\d{9}$/.test(form.phone)) {
+      toast.error('请输入正确的手机号')
       return
     }
     setSaving(true)

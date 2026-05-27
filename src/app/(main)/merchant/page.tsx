@@ -56,7 +56,7 @@ export default function MerchantPage() {
         orderRes.ok ? orderRes.json() : { data: [], total: 0 },
       ])
       const orders = orderData.data || []
-      const revenue = orders.filter((o: { status: string }) => o.status === 'completed').reduce((s: number, o: { pay_amount?: number }) => s + (o.pay_amount || 0), 0)
+      const revenue = orders.filter((o: { status: string }) => o.status === 'completed').reduce((s: number, o: { pay_amount?: number }) => s + (Number(o.pay_amount) || 0), 0)
       setDashboard({ products: prodData.total || 0, orders: orderData.total || 0, revenue })
     } catch {}
   }

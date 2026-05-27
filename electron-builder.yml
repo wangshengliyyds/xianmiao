@@ -9,8 +9,15 @@ files:
 
 win:
   target:
-    - portable
+    - appx
   icon: electron/assets/icon.png
+
+appx:
+  displayName: 闲妙
+  publisherDisplayName: xianmiao
+  identityName: com.xianmiao.app
+  backgroundColor: '#10b981'
+  showNameOnTiles: true
 
 mac:
   target:

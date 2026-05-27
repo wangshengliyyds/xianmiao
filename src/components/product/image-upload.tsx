@@ -29,14 +29,16 @@ export function ImageUpload({ value, onChange, max = 9 }: ImageUploadProps) {
     }
 
     try {
-      const currentUrls = [...value]
+      const uploaded: string[] = []
       for (const file of filesToUpload) {
         const url = await upload(file)
-        currentUrls.push(url)
-        onChange(currentUrls)
+        uploaded.push(url)
       }
-    } catch {
-      setError('部分图片上传失败，请重试')
+      onChange([...value, ...uploaded])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '图片上传失败，请重试')
+    } finally {
+      if (inputRef.current) inputRef.current.value = ''
     }
   }
 

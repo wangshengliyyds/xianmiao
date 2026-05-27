@@ -19,6 +19,7 @@ import {
   Heart,
 } from 'lucide-react'
 import { ProductGrid } from '@/components/product/product-grid'
+import { SmartImage } from '@/components/ui/smart-image'
 import { useAuth } from '@/lib/hooks/use-auth'
 import type { ProductWithImages, Category, Banner } from '@/types'
 
@@ -60,7 +61,7 @@ export default function HomePage() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
 
-  const isBuyer = !user || user.role === 'buyer'
+  const isBuyer = user?.role === 'buyer'
 
   // 加载数据
   useEffect(() => {
@@ -142,6 +143,40 @@ export default function HomePage() {
           <div className="absolute -bottom-3 -right-3 h-16 w-16 rounded-full bg-white/5" />
         </div>
       </section>
+
+      {/* ===== Banner 轮播区 ===== */}
+      {banners.length > 0 && (
+        <section className="mb-8">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {banners.map((banner) => (
+              <Link
+                key={banner.id}
+                href={banner.link_url || '#'}
+                className="relative h-36 w-[85%] shrink-0 overflow-hidden rounded-2xl bg-muted"
+              >
+                {banner.image_url ? (
+                  <SmartImage
+                    src={banner.image_url}
+                    alt={banner.title || 'Banner'}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 85vw, 640px"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                    {banner.title || 'Banner'}
+                  </div>
+                )}
+                {banner.title && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
+                    <p className="text-sm font-medium text-white">{banner.title}</p>
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ===== 分类区 ===== */}
       <section className="mb-8">

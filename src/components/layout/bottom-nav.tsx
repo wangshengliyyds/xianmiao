@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Search, PlusCircle, MessageCircle, User, Package } from 'lucide-react'
+import { Home, Search, PlusCircle, MessageCircle, User, Package, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUnread } from '@/lib/hooks/use-unread'
 import { useAuth } from '@/lib/hooks/use-auth'
@@ -19,6 +19,7 @@ export function BottomNav() {
   const navItems = [
     { href: '/', icon: Home, label: '首页' },
     { href: '/search', icon: Search, label: '搜索' },
+    { href: '/map', icon: MapPin, label: '附近' },
     ...(canPublish
       ? [{ href: '/product/publish', icon: PlusCircle, label: '发布' }]
       : [{ href: '/order', icon: Package, label: '订单' }]),

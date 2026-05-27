@@ -3,6 +3,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/format'
+
+function formatTime(dateStr: string) {
+  const d = new Date(dateStr)
+  const h = String(d.getHours()).padStart(2, '0')
+  const m = String(d.getMinutes()).padStart(2, '0')
+  return `${h}:${m}`
+}
 import { SmartImage } from '@/components/ui/smart-image'
 import type { MessageWithSender } from '@/types'
 
@@ -70,6 +77,45 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
     )
   }
 
+  // 出价消息
+  if (message.type === 'offer' && message.metadata) {
+    const meta = message.metadata as { amount?: number; product_title?: string }
+    return (
+      <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`}>
+        <div className="max-w-[70%]">
+          {!isMine && message.sender && (
+            <p className="mb-1 text-xs text-muted-foreground">{message.sender.nickname}</p>
+          )}
+          <div className={`rounded-2xl border-2 border-dashed px-4 py-3 ${isMine ? 'border-primary/40 bg-primary/5' : 'border-orange-400/40 bg-orange-50'}`}>
+            <p className="text-xs font-medium text-muted-foreground">💰 出价</p>
+            {meta.product_title && <p className="mt-0.5 text-xs text-muted-foreground">商品: {meta.product_title}</p>}
+            {meta.amount !== undefined && <p className="mt-1 text-lg font-bold text-primary">¥{meta.amount}</p>}
+            {message.content && <p className="mt-1 text-sm">{message.content}</p>}
+          </div>
+          <p className={`mt-0.5 text-xs text-muted-foreground ${isMine ? 'text-right' : ''}`}>
+            {formatTime(message.created_at)}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // 订单推送消息
+  if (message.type === 'order_push' && message.metadata) {
+    const meta = message.metadata as { order_no?: string; status?: string; amount?: number }
+    return (
+      <div className="flex justify-center mb-3">
+        <div className="max-w-[80%] rounded-xl border bg-card px-4 py-3">
+          <p className="text-xs font-medium text-muted-foreground">📦 订单更新</p>
+          {meta.order_no && <p className="mt-1 text-sm">订单号: {meta.order_no}</p>}
+          {meta.status && <p className="text-sm">状态: {meta.status}</p>}
+          {meta.amount !== undefined && <p className="text-sm font-bold text-primary">¥{meta.amount}</p>}
+          {message.content && <p className="mt-1 text-sm text-muted-foreground">{message.content}</p>}
+        </div>
+      </div>
+    )
+  }
+
   // 普通文本消息
   return (
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`}>
@@ -109,10 +155,7 @@ export function ChatBubble({ message, isMine }: ChatBubbleProps) {
           )}
         </div>
         <p className={`mt-0.5 text-xs text-muted-foreground ${isMine ? 'text-right' : ''}`}>
-          {new Date(message.created_at).toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {formatTime(message.created_at)}
         </p>
       </div>
     </div>

@@ -48,9 +48,12 @@ export async function reviewProduct(product: {
     return { approved: true, reason: '', confidence: 1 }
   }
 
+  // 防止 prompt injection：转义用户输入中的特殊字符
+  const sanitize = (s: string) => s.replace(/[{}"<>\[\]]/g, '').replace(/\n{2,}/g, '\n').slice(0, 2000)
+
   const prompt = REVIEW_PROMPT
-    .replace('{title}', product.title)
-    .replace('{description}', product.description || '无描述')
+    .replace('{title}', sanitize(product.title))
+    .replace('{description}', sanitize(product.description || '无描述'))
     .replace('{price}', String(product.price))
     .replace('{originalPrice}', String(product.original_price || product.price))
     .replace('{category}', String(product.category_id || '未分类'))

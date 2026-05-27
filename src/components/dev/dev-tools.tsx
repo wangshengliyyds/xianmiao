@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { Bug, ChevronUp, UserCog } from 'lucide-react'
 import { toast } from 'sonner'
@@ -41,10 +41,10 @@ export function DevTools() {
 
   // 注册激活监听器
   const onActivate = useCallback(() => setActivated(true), [])
-  useState(() => {
+  useEffect(() => {
     listeners.add(onActivate)
     return () => { listeners.delete(onActivate) }
-  })
+  }, [onActivate])
 
   const handleSwitch = async (role: string) => {
     if (!user || role === user.role) return

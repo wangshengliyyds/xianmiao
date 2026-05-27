@@ -58,14 +58,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!circle) return NextResponse.json({ error: '圈子不存在' }, { status: 404 })
 
     // 使用 upsert 防止并发重复加入
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('circle_members')
-      .upsert({ circle_id: id, user_id: user.id }, { onConflict: 'circle_id,user_id', ignoreDuplicates: true })
+      .upsert({ circle_id: id, user_id: user.id }, { onConflict: 'circle_id,user_id', ignoreDuplicates: true, count: 'exact' })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // 增加成员数（如果已存在，RPC 内部应做幂等处理）
-    await supabase.rpc('increment_circle_members', { circle_id: id })
+    // 仅在实际插入新行时增加成员数
+    if (count && count > 0) {
+      await supabase.rpc('increment_circle_members', { circle_id: id })
+    }
 
     return NextResponse.json({ success: true })
   } catch {
@@ -81,15 +83,18 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!user) return NextResponse.json({ error: '请先登录' }, { status: 401 })
 
   try {
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('circle_members')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('circle_id', id)
       .eq('user_id', user.id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    await supabase.rpc('decrement_circle_members', { circle_id: id })
+    // 仅在实际删除了行时减少成员数
+    if (count && count > 0) {
+      await supabase.rpc('decrement_circle_members', { circle_id: id })
+    }
 
     return NextResponse.json({ success: true })
   } catch {

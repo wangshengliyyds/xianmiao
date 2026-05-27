@@ -78,7 +78,7 @@ export default function EditProductPage() {
       }
     }
     fetchData()
-  }, [params.id, router])
+  }, [params.id, router, user])
 
   const validate = () => {
     const result = productPublishSchema.safeParse({

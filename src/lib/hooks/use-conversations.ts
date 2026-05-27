@@ -49,28 +49,27 @@ export function useConversations() {
   return query
 }
 
-export function useMessages(conversationId: string, before?: string) {
+export function useMessages(conversationId: string) {
   const queryClient = useQueryClient()
   const supabaseRef = useRef(createClient())
 
   const query = useQuery({
-    queryKey: ['messages', conversationId, before],
+    queryKey: ['messages', conversationId],
     queryFn: async (): Promise<{ data: MessageWithSender[]; has_more: boolean }> => {
       const params = new URLSearchParams()
-      if (before) params.set('before', before)
       params.set('limit', '50')
 
       const res = await fetch(`/api/conversations/${conversationId}/messages?${params}`)
       if (!res.ok) throw new Error('获取消息失败')
       return res.json()
     },
-    enabled: !!conversationId && !before,
+    enabled: !!conversationId,
     staleTime: 60 * 1000,
   })
 
   // Realtime 订阅：收到新消息时实时更新
   useEffect(() => {
-    if (!conversationId || before) return
+    if (!conversationId) return
 
     const supabase = supabaseRef.current
     const channel = supabase
@@ -97,9 +96,22 @@ export function useMessages(conversationId: string, before?: string) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [conversationId, before, queryClient])
+  }, [conversationId, queryClient])
 
   return query
+}
+
+export function useLoadMoreMessages() {
+  return useMutation({
+    mutationFn: async ({ conversationId, before }: { conversationId: string; before: string }) => {
+      const params = new URLSearchParams()
+      params.set('before', before)
+      params.set('limit', '50')
+      const res = await fetch(`/api/conversations/${conversationId}/messages?${params}`)
+      if (!res.ok) throw new Error('加载更多消息失败')
+      return res.json() as Promise<{ data: MessageWithSender[]; has_more: boolean }>
+    },
+  })
 }
 
 export function useCreateConversation() {
@@ -136,7 +148,7 @@ export function useSendMessage() {
     }: {
       conversationId: string
       type: string
-      content: string
+      content: string | null
       metadata?: Record<string, unknown>
     }) => {
       const res = await fetch(`/api/conversations/${conversationId}/messages`, {

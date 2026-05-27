@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Heart, Share2, MessageCircle, ShoppingCart, Star, ChevronLeft, Sparkles, Flag } from 'lucide-react'
+import { Heart, Share2, MessageCircle, ShoppingCart, Star, ChevronLeft, Sparkles, Flag, Pencil } from 'lucide-react'
 import { SmartImage } from '@/components/ui/smart-image'
 import { formatPrice, formatRelativeTime, formatCount } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,9 @@ export default function ProductDetailPage() {
   const { user } = useAuth()
 
   useEffect(() => {
+    setIsFavorited(false)
+    setSelectedSku(null)
+
     const fetchProduct = async () => {
       try {
         const res = await fetch(`/api/products/${params.id}`)
@@ -67,7 +70,7 @@ export default function ProductDetailPage() {
         .then(({ favorited }) => { if (favorited) setIsFavorited(true) })
         .catch(() => {})
     }
-  }, [params.id, router])
+  }, [params.id, router, user])
 
   const handleContactSeller = async () => {
     if (!product) return
@@ -142,7 +145,14 @@ export default function ProductDetailPage() {
   }
 
   if (!product) {
-    return null
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-muted-foreground">商品加载失败</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+          重试
+        </Button>
+      </div>
+    )
   }
 
   const images = product.images || []
@@ -290,8 +300,8 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   {sku.spec_name}
-                  {sku.price_override != null && sku.price_override !== product.price && (
-                    <span className="ml-1 text-xs text-muted-foreground">+¥{sku.price_override - product.price}</span>
+                  {sku.price_override != null && typeof sku.price_override === 'number' && sku.price_override !== product.price && (
+                    <span className="ml-1 text-xs text-muted-foreground">+¥{(sku.price_override - product.price).toFixed(2)}</span>
                   )}
                 </button>
               ))}
@@ -317,7 +327,7 @@ export default function ProductDetailPage() {
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-lg font-medium">
-                  {seller.nickname[0]}
+                  {seller.nickname?.[0] || '?'}
                 </div>
               )}
             </div>
@@ -356,7 +366,6 @@ export default function ProductDetailPage() {
       {/* AI 分析 */}
       {product.ai_analysis && (
         <>
-          <Separator />
           <div className="px-4 py-4">
             <div className="mb-3 flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -414,25 +423,38 @@ export default function ProductDetailPage() {
       {/* 底部操作栏 */}
       <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-bottom">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleContactSeller}
-            disabled={createConversation.isPending}
-            className="flex-1 gap-2"
-          >
-            <MessageCircle className="h-5 w-5" />
-            联系卖家
-          </Button>
-          <Button
-            size="lg"
-            onClick={handleBuy}
-            disabled={createOrder.isPending}
-            className="flex-1 gap-2"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {createOrder.isPending ? '下单中...' : '立即购买'}
-          </Button>
+          {user?.id === product.seller_id ? (
+            <Button
+              size="lg"
+              onClick={() => router.push(`/product/${product.id}/edit`)}
+              className="flex-1 gap-2"
+            >
+              <Pencil className="h-5 w-5" />
+              编辑商品
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleContactSeller}
+                disabled={createConversation.isPending}
+                className="flex-1 gap-2"
+              >
+                <MessageCircle className="h-5 w-5" />
+                联系卖家
+              </Button>
+              <Button
+                size="lg"
+                onClick={handleBuy}
+                disabled={createOrder.isPending}
+                className="flex-1 gap-2"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {createOrder.isPending ? '下单中...' : '立即购买'}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

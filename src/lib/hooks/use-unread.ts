@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useChatStore } from '@/stores/chat-store'
 
 interface UnreadSummary {
   chat_unread: number
@@ -8,7 +10,7 @@ interface UnreadSummary {
 }
 
 export function useUnread() {
-  return useQuery<UnreadSummary>({
+  const query = useQuery<UnreadSummary>({
     queryKey: ['unread-summary'],
     queryFn: async () => {
       const res = await fetch('/api/unread-summary')
@@ -18,4 +20,13 @@ export function useUnread() {
     staleTime: 15 * 1000,
     refetchInterval: 15000,
   })
+
+  // 同步 chat unread 到 chat store
+  useEffect(() => {
+    if (query.data) {
+      useChatStore.getState().setTotalUnread(query.data.chat_unread)
+    }
+  }, [query.data])
+
+  return query
 }

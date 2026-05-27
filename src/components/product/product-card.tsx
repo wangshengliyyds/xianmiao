@@ -35,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
           src={coverImage}
           alt={product.title}
           fill
-          className="object-cover transition-transform group-hover:scale-105"
+          className={`object-cover transition-transform group-hover:scale-105 ${product.status === 'sold' || product.status === 'reserved' ? 'opacity-60' : ''}`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
         {product.condition !== 'new' && (
@@ -45,6 +45,21 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             {conditionLabel}
           </Badge>
+        )}
+        {product.status === 'sold' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <span className="rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white">已售出</span>
+          </div>
+        )}
+        {product.status === 'reserved' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <span className="rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-yellow-400">已预订</span>
+          </div>
+        )}
+        {product.status === 'draft' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <span className="rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white">审核中</span>
+          </div>
         )}
       </div>
 

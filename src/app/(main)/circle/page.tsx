@@ -87,7 +87,7 @@ export default function CirclePage() {
   }
 
   const topCircles = circles.slice(0, 5)
-  const restCircles = circles.length > 5 ? circles.slice(5) : circles
+  const restCircles = circles.length > 5 ? circles.slice(5) : []
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -118,7 +118,7 @@ export default function CirclePage() {
                       {circle.cover_url ? (
                         <Image src={circle.cover_url} alt={circle.name} fill className="object-cover" sizes="48px" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xl font-medium">{circle.name[0]}</div>
+                        <div className="flex h-full w-full items-center justify-center text-xl font-medium">{circle.name?.[0] || '?'}</div>
                       )}
                     </div>
                     <span className="text-sm font-medium">{circle.name}</span>
@@ -139,7 +139,7 @@ export default function CirclePage() {
                     {circle.cover_url ? (
                       <Image src={circle.cover_url} alt={circle.name} fill className="object-cover" sizes="48px" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xl font-medium">{circle.name[0]}</div>
+                      <div className="flex h-full w-full items-center justify-center text-xl font-medium">{circle.name?.[0] || '?'}</div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">

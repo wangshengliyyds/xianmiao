@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       .select('*')
       .eq('phone', phone)
       .eq('code', code)
+      .gt('expires_at', new Date().toISOString())
       .single()
 
     if (queryError || !verification) {

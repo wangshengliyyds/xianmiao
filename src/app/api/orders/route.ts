@@ -100,7 +100,7 @@ export async function POST(request: Request) {
   }
 
   // 生成订单号
-  const orderNo = `XM${Date.now()}${Math.random().toString(36).slice(-4).toUpperCase()}`
+  const orderNo = `XM${crypto.randomUUID().replace(/-/g, '').slice(0, 16).toUpperCase()}`
   const totalAmount = product.price * result.data.quantity
 
   // 读取运费设置

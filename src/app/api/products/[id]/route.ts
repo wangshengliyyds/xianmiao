@@ -16,12 +16,13 @@ export async function GET(
   const { data, error } = await supabase
     .from('products')
     .select(`
-      *,
-      images:product_images(*),
-      videos:product_videos(*),
-      skus:product_skus(*),
+      id, title, description, price, original_price, condition, trade_method, status,
+      category_id, city, lat, lng, view_count, fav_count, created_at, expires_at,
+      images:product_images(id, url, is_cover, sort_order),
+      videos:product_videos(id, url, thumbnail_url),
+      skus:product_skus(id, name, price, stock),
       seller:profiles!seller_id(id, nickname, avatar_url, credit_score, created_at),
-      ai_analysis:product_ai_analysis(*)
+      ai_analysis:product_ai_analysis(id, result, risk_level, created_at)
     `)
     .eq('id', id)
     .single()
@@ -82,7 +83,9 @@ export async function PATCH(
   const { images, ...rest } = body
 
   // 只允许更新安全字段，并验证值
-  const allowedFields = ['title', 'description', 'price', 'original_price', 'condition', 'trade_method', 'category_id', 'city', 'lat', 'lng', 'status']
+  const allowedFields = isAdmin
+    ? ['title', 'description', 'price', 'original_price', 'condition', 'trade_method', 'category_id', 'city', 'lat', 'lng', 'status']
+    : ['title', 'description', 'price', 'original_price', 'condition', 'trade_method', 'category_id', 'city', 'lat', 'lng']
   const validConditions = ['new', 'like_new', 'good', 'fair', 'poor']
   const validTradeMethods = ['offline', 'escrow', 'both']
   const validStatuses = ['active', 'draft', 'reserved', 'sold', 'expired', 'removed']
@@ -139,9 +142,9 @@ export async function PATCH(
         await supabase.from('product_images').delete().eq('product_id', id).in('url', urlsToDelete)
       }
 
-      // 更新排序和封面
-      await supabase.from('product_images').update({ is_cover: false }).eq('product_id', id)
+      // 更新排序和封面 — 先设新封面，再清旧封面，避免短暂无封面窗口
       await supabase.from('product_images').update({ is_cover: true }).eq('product_id', id).eq('url', images[0])
+      await supabase.from('product_images').update({ is_cover: false }).eq('product_id', id).neq('url', images[0])
     } else {
       await supabase.from('product_images').delete().eq('product_id', id)
     }
@@ -183,7 +186,7 @@ export async function DELETE(
     .from('orders')
     .select('id')
     .eq('product_id', id)
-    .in('status', ['pending_pay', 'paid', 'shipped'])
+    .in('status', ['pending_pay', 'paid', 'shipped', 'delivered'])
     .limit(1)
 
   if (activeOrders && activeOrders.length > 0) {

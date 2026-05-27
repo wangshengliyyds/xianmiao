@@ -9,8 +9,9 @@ export async function middleware(request: NextRequest) {
   )
 
   // 需要登录的路由
-  const authRequired = ['/chat', '/order', '/profile', '/product/publish', '/product/edit', '/notification', '/merchant']
+  const authRequired = ['/chat', '/order', '/profile', '/product/publish', '/notification', '/merchant']
   const needsAuth = authRequired.some((p) => pathname.startsWith(p))
+    || /\/product\/[^/]+\/edit/.test(pathname)
 
   if (needsAuth && !hasAuthCookie) {
     const url = request.nextUrl.clone()

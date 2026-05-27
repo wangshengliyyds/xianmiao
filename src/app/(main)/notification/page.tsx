@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bell, Check, Package, MessageCircle, Gift, Shield, Info } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,7 @@ const typeColors: Record<string, string> = {
 }
 
 export default function NotificationPage() {
+  const router = useRouter()
   const [page, setPage] = useState(1)
   const [allNotifications, setAllNotifications] = useState<Notification[]>([])
 
@@ -65,8 +67,23 @@ export default function NotificationPage() {
     }
   }
 
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.is_read) {
+      handleMarkRead(notification.id)
+    }
+    // 根据通知类型跳转
+    const link = notification.link
+    if (link) {
+      router.push(link)
+    } else if (notification.type === 'chat') {
+      router.push('/chat')
+    } else if (notification.type === 'order') {
+      router.push('/order')
+    }
+  }
+
   const notifications = allNotifications
-  const unreadCount = data?.unread_count || 0
+  const unreadCount = allNotifications.filter((n) => !n.is_read).length
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -109,10 +126,10 @@ export default function NotificationPage() {
             return (
               <div
                 key={notification.id}
-                onClick={() => !notification.is_read && handleMarkRead(notification.id)}
-                className={`flex gap-3 px-4 py-3.5 transition-colors ${
+                onClick={() => handleNotificationClick(notification)}
+                className={`flex cursor-pointer gap-3 px-4 py-3.5 transition-colors ${
                   !notification.is_read ? 'bg-primary/5' : ''
-                }`}
+                } hover:bg-muted/50`}
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${colorClass}`}>
                   <Icon className="h-5 w-5 stroke-[2]" />

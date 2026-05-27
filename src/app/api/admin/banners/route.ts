@@ -74,6 +74,7 @@ export async function PATCH(req: Request) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: '未找到该记录' }, { status: 404 })
     return NextResponse.json({ data })
   } catch {
     return NextResponse.json({ error: '请求格式错误' }, { status: 400 })

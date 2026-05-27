@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ScrollText, ShoppingCart, Package, User, LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { formatRelativeTime } from '@/lib/format'
 
 interface AuditLog {
@@ -37,13 +38,16 @@ const targetTypeLabels: Record<string, string> = {
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
 
   useEffect(() => {
     const fetchLogs = async () => {
+      setLoading(true)
       try {
-        const res = await fetch('/api/admin/audit?page=1&page_size=30')
+        const res = await fetch(`/api/admin/audit?page=${page}&page_size=30`)
         if (!res.ok) return
-        const { data } = await res.json()
+        const { data, has_more } = await res.json()
         const entries: AuditLog[] = (data || []).map((item: {
           id: string
           action: string
@@ -60,6 +64,7 @@ export default function AdminAuditPage() {
           created_at: item.created_at,
         }))
         setLogs(entries)
+        setHasMore(has_more || false)
       } catch {
         // ignore
       } finally {
@@ -68,7 +73,7 @@ export default function AdminAuditPage() {
     }
 
     fetchLogs()
-  }, [])
+  }, [page])
 
   return (
     <div>
@@ -114,6 +119,29 @@ export default function AdminAuditPage() {
           </tbody>
         </table>
       </div>
+
+      {/* 分页 */}
+      {(page > 1 || hasMore) && (
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+          >
+            上一页
+          </Button>
+          <span className="text-sm text-muted-foreground">第 {page} 页</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasMore}
+          >
+            下一页
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

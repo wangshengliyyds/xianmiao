@@ -46,7 +46,11 @@ export async function requireAuth() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.is_banned) {
+  if (!profile) {
+    return { error: NextResponse.json({ error: '用户资料不存在' }, { status: 404 }) }
+  }
+
+  if (profile.is_banned) {
     return { error: NextResponse.json({ error: '账号已被封禁' }, { status: 403 }) }
   }
 

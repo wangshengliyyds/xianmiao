@@ -35,6 +35,9 @@ export function useUpload() {
       const url = await doUpload(file)
       setProgress(100)
       return url
+    } catch (err) {
+      setProgress(0)
+      throw err
     } finally {
       setUploading(false)
     }
@@ -50,6 +53,9 @@ export function useUpload() {
         setProgress(Math.round(((i + 1) / files.length) * 100))
       }
       return urls
+    } catch (err) {
+      setProgress(0)
+      throw err
     } finally {
       setUploading(false)
     }

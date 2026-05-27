@@ -39,6 +39,7 @@ export default function MyProductsPage() {
   }, [])
 
   const handleDelete = async (productId: string) => {
+    if (!confirm('确定要下架该商品吗？')) return
     try {
       const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' })
       if (res.ok) {

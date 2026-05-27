@@ -22,6 +22,14 @@ export function createAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_KEY!,
-    proxyFetch ? { global: { fetch: proxyFetch } } : undefined
+    {
+      global: {
+        fetch: proxyFetch ?? ((url, init) => {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 8000)
+          return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timeout))
+        }),
+      },
+    }
   )
 }

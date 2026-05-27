@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { ProductFilters } from '@/types'
 
 interface ProductState {
@@ -38,6 +38,6 @@ export const useProductStore = create<ProductState>()(
 
       clearRecentSearches: () => set({ recentSearches: [] }),
     }),
-    { name: 'product-store' }
+    { name: 'product-store', storage: createJSONStorage(() => typeof window !== 'undefined' ? localStorage : undefined) }
   )
 )

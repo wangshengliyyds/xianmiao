@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ClipboardList } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { BackHeader } from '@/components/common/back-header'
 import { OrderCard } from '@/components/order/order-card'
 import { LoadingSpinner } from '@/components/common/loading-spinner'
@@ -32,10 +33,8 @@ export default function OrderListPage() {
 
   // 非买家访问 buyer 视图时重定向到 seller 视图
   const [activeStatus, setActiveStatus] = useState(initialStatus)
-  const [role, setRole] = useState<'buyer' | 'seller'>(() => {
-    if (!isBuyer && initialRole === 'buyer') return 'seller'
-    return initialRole
-  })
+  const [role, setRole] = useState<'buyer' | 'seller'>(initialRole)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     if (authLoading || !user) return
@@ -44,11 +43,16 @@ export default function OrderListPage() {
     }
   }, [user, authLoading, isBuyer, role])
 
+  // 切换角色或状态时重置页码
+  useEffect(() => {
+    setPage(1)
+  }, [role, activeStatus])
+
   const { data, isLoading } = useOrders(
     role,
     activeStatus as OrderStatus | 'all',
-    1,
-    50
+    page,
+    20
   )
 
   const orders = data?.data || []
@@ -121,11 +125,21 @@ export default function OrderListPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} role={role} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} role={role} />
+              ))}
+            </div>
+
+            {data?.has_more && (
+              <div className="mt-4 text-center">
+                <Button variant="ghost" onClick={() => setPage((p) => p + 1)}>
+                  加载更多
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
