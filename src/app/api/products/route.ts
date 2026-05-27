@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { productPublishSchema } from '@/lib/validators'
 import { PRODUCT_EXPIRE_DAYS } from '@/lib/constants'
 import { getProductImages } from '@/lib/product-images'
+import { reviewProduct } from '@/lib/ai-review'
 
 // 获取商品列表
 export async function GET(request: Request) {
@@ -207,12 +208,12 @@ export async function POST(request: Request) {
   }
 
   // 检查是否启用AI审核
-  const { data: aiReviewSetting } = await supabase
+  const { data: appSettings } = await supabase
     .from('system_settings')
     .select('value')
-    .eq('key', 'enable_ai_review')
+    .eq('key', 'app_settings')
     .single()
-  const aiReviewEnabled = aiReviewSetting?.value === true || aiReviewSetting?.value === 'true'
+  const aiReviewEnabled = (appSettings?.value as Record<string, unknown>)?.enable_ai_review === true
 
   // 创建商品
   const { data: product, error: productError } = await supabase
@@ -247,6 +248,33 @@ export async function POST(request: Request) {
     // 回滚：删除商品
     await supabase.from('products').delete().eq('id', product.id)
     return NextResponse.json({ error: '图片保存失败' }, { status: 500 })
+  }
+
+  // AI 自动审核（异步，不阻塞发布响应）
+  if (aiReviewEnabled) {
+    reviewProduct({
+      title: productData.title,
+      description: productData.description || '',
+      price: productData.price,
+      original_price: productData.original_price,
+      category_id: productData.category_id,
+    }).then(async (result) => {
+      if (result.approved) {
+        await supabase.from('products').update({ status: 'active' }).eq('id', product.id)
+      } else {
+        // AI 拒绝，通知卖家
+        await supabase.from('products').update({ status: 'removed' }).eq('id', product.id)
+        await supabase.from('notifications').insert({
+          user_id: user.id,
+          type: 'system',
+          title: '商品审核未通过',
+          content: `您发布的「${productData.title}」未通过审核。原因：${result.reason}`,
+          link: `/product/${product.id}`,
+        })
+      }
+    }).catch((err) => {
+      console.error('[ai-review] 审核异常:', err)
+    })
   }
 
   return NextResponse.json({ data: product }, { status: 201 })

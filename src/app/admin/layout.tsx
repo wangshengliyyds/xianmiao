@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   Home,
   Flag,
+  Store,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/hooks/use-auth'
@@ -29,6 +30,7 @@ const navItems = [
   { icon: LayoutDashboard, label: '数据看板', href: '/admin' },
   { icon: Users, label: '用户管理', href: '/admin/users' },
   { icon: Bot, label: '商品审核', href: '/admin/ai-review' },
+  { icon: Store, label: '商家管理', href: '/admin/merchants' },
   { icon: ShoppingCart, label: '订单管理', href: '/admin/orders' },
   { icon: AlertTriangle, label: '交易纠纷', href: '/admin/disputes' },
   { icon: Wallet, label: '财务中心', href: '/admin/finance' },

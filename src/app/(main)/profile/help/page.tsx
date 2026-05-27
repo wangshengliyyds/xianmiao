@@ -1,11 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ChevronRight, BookOpen, MessageCircle, Mail, FileQuestion, ChevronDown, Package, CreditCard, Truck, ShieldCheck } from 'lucide-react'
 import { BackHeader } from '@/components/common/back-header'
 import { Separator } from '@/components/ui/separator'
-import { toast } from 'sonner'
 
 const faqItems = [
   { q: '如何发布商品？', a: '点击首页底部的「+」按钮，填写商品信息后即可发布。' },
@@ -22,7 +20,6 @@ const guideSteps = [
 ]
 
 export default function HelpPage() {
-  const router = useRouter()
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
   const [showGuide, setShowGuide] = useState(false)
 
@@ -62,8 +59,8 @@ export default function HelpPage() {
         <div>
           <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">联系我们</p>
           <div className="rounded-2xl border bg-card">
-            <button
-              onClick={() => router.push('/chat')}
+            <a
+              href="mailto:help@xianmiao.com?subject=在线客服咨询"
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 rounded-t-2xl"
             >
               <div className="flex h-[34px] w-[34px] items-center justify-center rounded-xl bg-muted/60">
@@ -71,10 +68,10 @@ export default function HelpPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">在线客服</p>
-                <p className="text-xs text-muted-foreground">工作时间 9:00-18:00</p>
+                <p className="text-xs text-muted-foreground">发送邮件联系我们</p>
               </div>
               <ChevronRight className="h-4 w-4 stroke-[2] text-muted-foreground/40" />
-            </button>
+            </a>
             <Separator />
             <a
               href="mailto:help@xianmiao.com?subject=意见反馈"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { messageSchema } from '@/lib/validators'
+import { sendNotification } from '@/lib/notifications'
 
 // 获取消息列表
 export async function GET(
@@ -168,14 +169,14 @@ export async function POST(
           // 未读计数更新失败不影响消息发送
         }
 
-        // 生成消息通知
-        await supabase.from('notifications').insert({
+        // 生成消息通知（检查用户偏好）
+        await sendNotification(supabase, {
           user_id: m.user_id,
           type: 'chat',
           title: '新消息',
           content: result.data.type === 'text'
-            ? result.data.content.slice(0, 50)
-            : '[图片]',
+            ? (result.data.content || '').slice(0, 50)
+            : result.data.type === 'image' ? '[图片]' : '[消息]',
           link: `/chat/${id}`,
         })
       }

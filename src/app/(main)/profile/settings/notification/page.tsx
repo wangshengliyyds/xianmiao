@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BackHeader } from '@/components/common/back-header'
+import { usePush } from '@/lib/hooks/use-push'
 import { toast } from 'sonner'
 
 interface NotifSetting {
@@ -19,18 +20,22 @@ const notifSettings: NotifSetting[] = [
   { key: 'promotion', label: '营销推送', desc: '优惠活动、促销信息推送', default: false },
 ]
 
-function getSettings(): Record<string, boolean> {
-  try {
-    const saved = localStorage.getItem('notif-settings')
-    if (saved) return JSON.parse(saved)
-  } catch {}
+function getDefaultSettings(): Record<string, boolean> {
   const defaults: Record<string, boolean> = {}
   notifSettings.forEach((s) => { defaults[s.key] = s.default })
   return defaults
 }
 
 export default function NotificationSettingsPage() {
-  const [settings, setSettings] = useState(getSettings)
+  const [settings, setSettings] = useState(getDefaultSettings)
+  const { supported: pushSupported, subscribed: pushSubscribed, loading: pushLoading, subscribe, unsubscribe } = usePush()
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('notif-settings')
+      if (saved) setSettings(JSON.parse(saved))
+    } catch {}
+  }, [])
 
   const toggle = (key: string) => {
     const next = { ...settings, [key]: !settings[key] }
@@ -69,6 +74,38 @@ export default function NotificationSettingsPage() {
             </div>
           ))}
         </div>
+
+        {/* 推送通知 */}
+        {pushSupported && (
+          <>
+            <p className="mt-6 mb-2 px-1 text-xs font-medium text-muted-foreground">系统推送</p>
+            <div className="rounded-2xl border bg-card">
+              <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">浏览器推送通知</p>
+                  <p className="text-xs text-muted-foreground">
+                    {pushSubscribed ? '已开启，关闭网页也能收到通知' : '开启后即使关闭网页也能收到通知'}
+                  </p>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (pushSubscribed) {
+                      await unsubscribe()
+                      toast.success('已关闭推送')
+                    } else {
+                      const ok = await subscribe()
+                      toast[ok ? 'success' : 'error'](ok ? '已开启推送' : '开启失败，请检查浏览器通知权限')
+                    }
+                  }}
+                  disabled={pushLoading}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${pushSubscribed ? 'bg-primary' : 'bg-muted'}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${pushSubscribed ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

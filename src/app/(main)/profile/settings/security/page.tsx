@@ -114,8 +114,12 @@ export default function AccountSecurityPage() {
             <Label className="text-xs">手机号</Label>
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{user.phone?.slice(0, 3)}****{user.phone?.slice(-4)}</span>
-              <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">已绑定</span>
+              <span className="text-sm">{user.phone ? `${user.phone.slice(0, 3)}****${user.phone.slice(-4)}` : '未绑定'}</span>
+              {user.phone ? (
+                <span className="ml-auto rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-600">已绑定</span>
+              ) : (
+                <span className="ml-auto rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-600">未绑定</span>
+              )}
             </div>
           </div>
           <Button onClick={handleSave} disabled={saving} className="w-full">
@@ -131,9 +135,13 @@ export default function AccountSecurityPage() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">账号安全等级</p>
-              <p className="text-xs text-muted-foreground">已绑定手机，账号安全</p>
+              <p className="text-xs text-muted-foreground">{user.phone ? '已绑定手机，账号安全' : '未绑定手机，建议尽快绑定'}</p>
             </div>
-            <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-600">安全</span>
+            {user.phone ? (
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-600">安全</span>
+              ) : (
+                <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-600">待完善</span>
+              )}
           </div>
         </div>
       </div>

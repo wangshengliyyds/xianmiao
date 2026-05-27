@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendNotification } from '@/lib/notifications'
+import { sendEmail, orderStatusEmail } from '@/lib/mail'
 
 // 获取订单详情
 export async function GET(
@@ -44,6 +46,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  try {
   const supabase = await createClient()
   const { id } = await params
 
@@ -170,12 +173,13 @@ export async function PATCH(
       .eq('status', 'reserved')
   }
 
-  // 如果完成订单，更新商品状态为 sold
+  // 如果完成订单，更新商品状态为 sold（仅当商品当前是 reserved 时）
   if (newStatus === 'completed') {
     await supabase
       .from('products')
       .update({ status: 'sold' })
       .eq('id', order.product_id)
+      .eq('status', 'reserved')
   }
 
   // 生成通知
@@ -192,14 +196,30 @@ export async function PATCH(
     : (user.id === order.buyer_id ? order.seller_id : order.buyer_id)
 
   if (statusMessages[newStatus!] && notifyUserId !== user.id) {
-    await supabase.from('notifications').insert({
+    await sendNotification(supabase, {
       user_id: notifyUserId,
       type: 'order',
       title: '订单状态更新',
       content: statusMessages[newStatus!],
       link: `/order/${id}`,
     })
+
+    // 发送邮件通知（不阻塞主流程）
+    const { data: notifyProfile } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('id', notifyUserId)
+      .single()
+    if (notifyProfile?.phone) {
+      const email = `${notifyProfile.phone}@xianmiao.phone`
+      const { subject, html } = orderStatusEmail(order.order_no, newStatus!, `${process.env.NEXT_PUBLIC_APP_URL}/order/${id}`)
+      sendEmail({ to: email, subject, html }).catch(() => {})
+    }
   }
 
   return NextResponse.json({ data })
+  } catch (err) {
+    console.error('[orders/[id]] PATCH error:', err)
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
+  }
 }
